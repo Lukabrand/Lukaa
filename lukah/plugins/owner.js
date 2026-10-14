@@ -73,7 +73,7 @@ function storesha(sha) {
     fs.writeFileSync(SHA_FILE, sha, 'utf8');
 }
 
-const REPO_IMAGE = 'https://i.imgur.com/9VP31oG.png';
+const REPO_IMAGE = 'https://i.imgur.com/YbnhBIV.png';
 
 // ── Sudo management ────────────────────────────────────────────
 addCmd({
