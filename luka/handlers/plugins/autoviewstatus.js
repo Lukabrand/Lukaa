@@ -10,7 +10,7 @@ let _manager = null;
 function getManager() {
     if (_manager) return _manager;
     try {
-        const mod = require('../../../guruh/plugins/autoviewstatus');
+        const mod = require('../../../lukah/plugins/autoviewstatus');
         _manager = mod.autoViewManager;
     } catch (e) {
         console.warn('[autoviewstatus] Could not load AutoViewManager:', e.message);
