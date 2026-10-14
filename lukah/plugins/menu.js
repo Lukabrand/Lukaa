@@ -9,13 +9,13 @@
 const _more     = String.fromCharCode(8206);
 const _readmore = _more.repeat(4001);
 
-const { addCmd, addTrigger, getAllCmds } = require('../../guru/handlers/loader');
-const { gmdProgress, runtime, fmtBytes } = require('../../guru/utils/gmdFunctions');
-const { daysUntil, fmtDate, parseExpiryDate, fmtCountdown, expiryBar, expiryLine } = require('../../guru/utils/expiry');
-const { channelCtx } = require('../../guru/utils/gmdFunctions2');
-const config = require('../../guru/config/settings');
+const { addCmd, addTrigger, getAllCmds } = require('../../luka/handlers/loader');
+const { gmdProgress, runtime, fmtBytes } = require('../../luka/utils/gmdFunctions');
+const { daysUntil, fmtDate, parseExpiryDate, fmtCountdown, expiryBar, expiryLine } = require('../../luka/utils/expiry');
+const { channelCtx } = require('../../luka/utils/gmdFunctions2');
+const config = require('../../luka/config/settings');
 const moment = require('moment-timezone');
-const { sendButtons } = require('../../guru/utils/gmdFunctions2');
+const { sendButtons } = require('../../luka/utils/gmdFunctions2');
 
 const MENU_IMAGE = 'https://i.imgur.com/9VP31oG.png';
 
