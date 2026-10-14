@@ -3,7 +3,7 @@ const fs     = require('fs');
 const path   = require('path');
 const config = require('../config/settings');
 
-const PLUGINS_DIR = path.join(__dirname, '../../guruh/plugins');
+const PLUGINS_DIR = path.join(__dirname, '../../lukah/plugins');
 
 const commands = new Map();
 const triggers  = [];
@@ -25,7 +25,7 @@ function addTrigger({ pattern, handler }) {
 }
 
 // ═══════════════════════════════════════════════════════════
-//  CONTEXT BRIDGE — maps BLACK PANTHER MD ctx → plugin ctx
+//  CONTEXT BRIDGE — maps LUKA-XMD ctx → plugin ctx
 // ═══════════════════════════════════════════════════════════
 
 function buildPluginCtx(ctx) {
