@@ -17,7 +17,7 @@ const config = require('../../luka/config/settings');
 const moment = require('moment-timezone');
 const { sendButtons } = require('../../luka/utils/gmdFunctions2');
 
-const MENU_IMAGE = 'https://i.imgur.com/9VP31oG.png';
+const MENU_IMAGE = 'https://i.imgur.com/YbnhBIV.png';
 
 const CATS = [
     { key: 'general',    label: 'GENERAL',     icon: '⚙️',  block: '█' },
