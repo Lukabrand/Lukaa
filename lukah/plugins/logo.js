@@ -1,7 +1,7 @@
 "use strict";
 
 const sharp = require("sharp");
-const { addCmd } = require("../../guru/handlers/loader");
+const { addCmd } = require("../../luka/handlers/loader");
 
 const FOOTER = "ᴘᴏᴡᴇʀᴇᴅ ʙʏ ʟᴜᴋᴀʙʀᴀɴᴅ";
 
