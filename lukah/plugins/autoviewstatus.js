@@ -1,9 +1,9 @@
 'use strict';
 
-const db           = require('../../guru/db/database');
+const db           = require('../../luka/db/database');
 const { getBotName } = require('../botname');
-const { addCmd }   = require('../../guru/handlers/loader');
-const config       = require('../../guru/config/settings');
+const { addCmd }   = require('../../luka/handlers/loader');
+const config       = require('../../luka/config/settings');
 
 const CONFIG_DB_KEY = 'autoview_config';
 const DEFAULT_VIEW_CONFIG = {
