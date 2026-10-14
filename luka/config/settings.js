@@ -10,7 +10,7 @@ const env = (key, def = '') => process.env[key] || def;
 const config = {
     // 🤖 BOT IDENTITY
     BOT_NAME: env('BOT_NAME', 'LUKA-XMD'),
-    OWNER_NAME: env('OWNER_NAME', 'Lukabrand'),
+    OWNER_NAME: env('OWNER_NAME', 'ʟᴜᴋᴀʙʀᴀɴᴅ'),
     OWNER_NUMBER: env('OWNER_NUMBER', '255768619068'),
     BOT_PREFIX: env('BOT_PREFIX', '.'),
     BOT_VERSION: '5.0.0',
