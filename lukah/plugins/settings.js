@@ -1,20 +1,10 @@
 'use strict';
-// ╔══════════════════════════════════════════════════════════════╗
-//  🐾  LUKA-XMD  —  Settings Plugin
-//  Owner & group settings commands:
-//    • autoreact / autoread / autolike / autobio toggles
-//    • autotyping  — show typing indicator before replies
-//    • antiflood   — kick members who flood messages
-//    • setlimit    — configure warn-kick threshold
-//    • settz       — change timezone at runtime
-//    • botsettings — view all settings at a glance
-// ╚══════════════════════════════════════════════════════════════╝
 
-const { addCmd, addTrigger } = require('../../guru/handlers/loader');
-const { getSetting, setSetting, getGroupSettings, setGroupSetting } = require('../../guru/db/database');
-const config = require('../../guru/config/settings');
+const { addCmd, addTrigger } = require('../../luka/handlers/loader');
+const { getSetting, setSetting, getGroupSettings, setGroupSetting } = require('../../luka/db/database');
+const config = require('../../luka/config/settings');
 const moment = require('moment-timezone');
-const { channelCtx } = require('../../guru/utils/gmdFunctions2');
+const { channelCtx } = require('../../luka/utils/gmdFunctions2');
 
 // ═══════════════════════════════════════════════════════════════
 //  OWNER BOOL TOGGLE HELPER
@@ -364,7 +354,7 @@ addCmd({
             }
 
             msg += `╰═════════════════⊷\n\n`;
-            msg += `_${footer}_`;
+            msg += `${footer}`;
 
             await ctx.reply(msg);
 
