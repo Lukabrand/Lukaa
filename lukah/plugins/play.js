@@ -1,10 +1,10 @@
 'use strict';
 
-const { addCmd }     = require('../../guru/handlers/loader');
+const { addCmd }     = require('../../luka/handlers/loader');
 const axios          = require('axios');
-const config         = require('../../guru/config/settings');
-const { channelCtx } = require('../../guru/utils/gmdFunctions2');
-const { guruApi }    = require('../../guru/utils/guruApi');
+const config         = require('../../luka/config/settings');
+const { channelCtx } = require('../../luka/utils/gmdFunctions2');
+const { guruApi }    = require('../../luka/utils/guruApi');
 
 const API_TIMEOUT = 30000;
 
