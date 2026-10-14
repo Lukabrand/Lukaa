@@ -15,7 +15,7 @@ const config = {
     BOT_PREFIX: env('BOT_PREFIX', '.'),
     BOT_VERSION: '5.0.0',
     PACK_NAME: env('BOT_NAME', 'LUKA-XMD'),
-    PACK_AUTHOR: env('OWNER_NAME', 'Lukabrand'),
+    PACK_AUTHOR: env('OWNER_NAME', 'ʟᴜᴋᴀʙʀᴀɴᴅ'),
 
     // 📡 CHANNEL
     CHANNEL_URL: env('CHANNEL_URL', 'https://whatsapp.com/channel/0029l2UX3rZZilMSvxN1e'),
