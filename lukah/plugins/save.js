@@ -1,7 +1,7 @@
 'use strict';
 
-const { addCmd } = require('../../guru/handlers/loader');
-const config = require('../../guru/config/settings');
+const { addCmd } = require('../../luka/handlers/loader');
+const config = require('../../luka/config/settings');
 const {
     downloadContentFromMessage,
 } = require('@whiskeysockets/baileys');
