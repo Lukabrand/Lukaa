@@ -1,10 +1,10 @@
 'use strict';
 
-const { addCmd }     = require('../../guru/handlers/loader');
+const { addCmd }     = require('../../luka/handlers/loader');
 const axios          = require('axios');
-const config         = require('../../guru/config/settings');
-const { pickRandom } = require('../../guru/utils/gmdFunctions');
-const { channelCtx } = require('../../guru/utils/gmdFunctions2');
+const config         = require('../../luka/config/settings');
+const { pickRandom } = require('../../luka/utils/gmdFunctions');
+const { channelCtx } = require('../../luka/utils/gmdFunctions2');
 
 function card(title, lines, footer = config.BOT_NAME) {
     let out = `┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n`;
