@@ -1,9 +1,9 @@
 'use strict';
-const { addCmd, addTrigger } = require('../../guru/handlers/loader');
-const config  = require('../../guru/config/settings');
-const { getSetting } = require('../../guru/db/database');
-const { channelCtx } = require('../../guru/utils/gmdFunctions2');
-const { guruApi }    = require('../../guru/utils/guruApi');
+const { addCmd, addTrigger } = require('../../luka/handlers/loader');
+const config  = require('../../luka/config/settings');
+const { getSetting } = require('../../luka/db/database');
+const { channelCtx } = require('../../luka/utils/gmdFunctions2');
+const { guruApi }    = require('../../luka/utils/guruApi');
 
 const memory = new Map();
 function getHistory(jid)  { if (!memory.has(jid)) memory.set(jid, []); return memory.get(jid); }
@@ -30,7 +30,7 @@ async function askAI(userMessage, senderJid, model = 'chat') {
 addCmd({
     name: 'ai',
     aliases: ['ask', 'gpt', 'chat'],
-    desc: 'Chat with the AI assistant (GuruTech)',
+    desc: 'Chat with the AI assistant (Lukabrand)',
     usage: 'ai <your question>',
     category: 'ai',
     handler: async (ctx) => {
@@ -48,7 +48,7 @@ addCmd({
 addCmd({
     name: 'gpt5',
     aliases: ['gpt'],
-    desc: 'Chat with GPT-5 via GuruTech',
+    desc: 'Chat with GPT-5 via Lukabrand',
     usage: 'gpt5 <question>',
     category: 'ai',
     handler: async (ctx) => {
@@ -64,7 +64,7 @@ addCmd({
 addCmd({
     name: 'gemini',
     aliases: ['gem'],
-    desc: 'Chat with Gemini 2.5 Pro via GuruTech',
+    desc: 'Chat with Gemini 2.5 Pro via Lukabrand',
     usage: 'gemini <question>',
     category: 'ai',
     handler: async (ctx) => {
@@ -80,7 +80,7 @@ addCmd({
 addCmd({
     name: 'deepseek',
     aliases: ['ds'],
-    desc: 'Chat with DeepSeek V3 via GuruTech',
+    desc: 'Chat with DeepSeek V3 via Lukabrand',
     usage: 'deepseek <question>',
     category: 'ai',
     handler: async (ctx) => {
@@ -119,7 +119,7 @@ addCmd({
 addCmd({
     name: 'translate',
     aliases: ['tr', 'trans'],
-    desc: 'Translate text to any language via GuruTech',
+    desc: 'Translate text to any language via Lukabrand',
     usage: 'translate <language> | <text>',
     category: 'ai',
     handler: async (ctx) => {
@@ -310,7 +310,7 @@ addCmd({
     category: 'ai',
     ownerOnly: true,
     handler: async (ctx) => {
-        const { setSetting } = require('../../guru/db/database');
+        const { setSetting } = require('../../luka/db/database');
         const current = getSetting('CHATBOT') === 'true';
         setSetting('CHATBOT', String(!current));
         await ctx.sock.sendMessage(ctx.from, { text: `🤖 Chatbot is now *${!current ? 'ON' : 'OFF'}*.`, contextInfo: channelCtx() }, { quoted: ctx.m });
