@@ -4,8 +4,8 @@
 //  Profile, presence, blocklist, privacy controls
 // ╚══════════════════════════════════════════════════════════════╝
 
-const { addCmd } = require('../../guru/handlers/loader');
-const { cleanJid } = require('../../guru/utils/helpers');
+const { addCmd } = require('../../luka/handlers/loader');
+const { cleanJid } = require('../../luka/utils/helpers');
 
 // Resolve target JID from quoted reply, mention, or phone-number arg
 function resolveTarget(ctx) {
