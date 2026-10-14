@@ -2,7 +2,7 @@
 
 <p align="center">
   <a href="https://github.com/Lukabrand/LUKA-XMD">
-    <img alt="MAYRA AI docs" height="350" src="https://i.imgur.com/WETZK1U.jpeg">
+    <img alt="MAYRA AI docs" height="350" src="https://i.imgur.com/XqygLso.jpeg">
   </a>
 </p>
 
