@@ -1,9 +1,9 @@
 'use strict';
-const { addCmd } = require('../../guru/handlers/loader');
+const { addCmd } = require('../../luka/handlers/loader');
 const axios      = require('axios');
-const config     = require('../../guru/config/settings');
-const { channelCtx } = require('../../guru/utils/gmdFunctions2');
-const { sendButtons } = require('../../guru/utils/gmdFunctions2');
+const config     = require('../../luka/config/settings');
+const { channelCtx } = require('../../luka/utils/gmdFunctions2');
+const { sendButtons } = require('../../luka/utils/gmdFunctions2');
 
 // ── Profile picture ───────────────────────────────────────────
 addCmd({
@@ -91,7 +91,7 @@ addCmd({
     desc: 'Show bot GitHub repo stats with links',
     category: 'general',
     handler: async (ctx) => {
-        const REPO_OWNER  = 'Lukabrand';
+        const REPO_OWNER  = 'ʟᴜᴋᴀʙʀᴀɴᴅ';
         const REPO_NAME   = 'LUKA-XMD';
         const REPO_URL    = `https://github.com/${REPO_OWNER}/${REPO_NAME}`;
         const FORK_URL    = `${REPO_URL}/fork`;
