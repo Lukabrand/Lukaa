@@ -1,10 +1,10 @@
 'use strict';
-const { addCmd }                          = require('../../guru/handlers/loader');
-const { getStatusReport }                 = require('../../guru/utils/statusEngine');
-const { addSudo, removeSudo, getSudoList, isSudo, setSetting, getSetting } = require('../../guru/db/database');
-const { numberToJid, cleanJid }           = require('../../guru/utils/helpers');
-const config                              = require('../../guru/config/settings');
-const { channelCtx, sendButtons }         = require('../../guru/utils/gmdFunctions2');
+const { addCmd }                          = require('../../luka/handlers/loader');
+const { getStatusReport }                 = require('../../luka/utils/statusEngine');
+const { addSudo, removeSudo, getSudoList, isSudo, setSetting, getSetting } = require('../../luka/db/database');
+const { numberToJid, cleanJid }           = require('../../luka/utils/helpers');
+const config                              = require('../../luka/config/settings');
+const { channelCtx, sendButtons }         = require('../../luka/utils/gmdFunctions2');
 const { execSync }                        = require('child_process');
 const fs                                  = require('fs');
 const path                                = require('path');
@@ -25,7 +25,7 @@ function ghRequest(method, apiPath, body = null) {
             headers:  {
                 'Authorization': token ? `token ${token}` : '',
                 'Accept':        'application/vnd.github.v3+json',
-                'User-Agent':    'BlackPantherMD-Bot',
+                'User-Agent':    'LUKA-XMD-Bot',
                 'Content-Type':  'application/json',
             },
         };
@@ -511,17 +511,22 @@ addCmd({
         } catch {}
 
         const ownerCard =
-            `╭═❖ *OWNER INFO* ❖═╮\n` +
-            `│ 🐾 *${config.BOT_NAME}*\n` +
-            `├──────────────────────────\n` +
-            `│ 👑 *Name:*    ${config.OWNER_NAME}\n` +
-            `│ 📞 *Number:*  +${config.OWNER_NUMBER}\n` +
-            `│ 💬 *Chat:*    wa.me/${config.OWNER_NUMBER}\n` +
-            `│ 📡 *Channel:* ${config.CHANNEL_URL}\n` +
-            `├──────────────────────────\n` +
-            `│ 🔗 *GitHub:*  https://github.com/Lukabrand/LUKA-XMD\n` +
-            `│ ⭐ Star us if you love the bot!\n` +
-            `╰═❖ _${config.BOT_NAME}_ ❖═╯`;
+     
+`╭══〘〘 👑 *OWNER INFO* 〙〙═⊷
+┃
+┃ 🐾 *Bot:* ${config.BOT_NAME}
+┃ 👑 *Name:* ${config.OWNER_NAME}
+┃ 📞 *Number:* +${config.OWNER_NUMBER}
+┃ 💬 *Chat:* wa.me/${config.OWNER_NUMBER}
+┃ 📡 *Channel:* ${config.CHANNEL_URL}
+┃
+╠════════════════════
+┃ 🔗 *GitHub:*
+┃ github.com/Lukabrand/LUKA-XMD
+┃
+┃ ⭐ _Star us if you love the bot!_
+┃
+╰═════════════════⊷`;
 
         if (ppUrl) {
             await ctx.sock.sendMessage(
