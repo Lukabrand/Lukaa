@@ -1,6 +1,6 @@
 'use strict';
 
-const { addCmd } = require('../../guru/handlers/loader');
+const { addCmd } = require('../../luka/handlers/loader');
 const {
     default: makeWASocket,
     useMultiFileAuthState,
