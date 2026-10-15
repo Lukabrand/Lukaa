@@ -21,6 +21,20 @@
   --shadow-dark: #c8ccd2;
   --shadow-light: #ffffff;
   --line: rgba(116, 129, 151, .18);
+  color-scheme: light;
+}
+body.dark-mode {
+  --bg: #202630;
+  --surface: #202630;
+  --text: #e7ebf2;
+  --muted: #9aa6b8;
+  --accent: #e0bd68;
+  --accent-soft: #f0d995;
+  --green: #65d6a0;
+  --shadow-dark: #171c24;
+  --shadow-light: #2a303c;
+  --line: rgba(255,255,255,.08);
+  color-scheme: dark;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
@@ -42,7 +56,10 @@ a { color: inherit; }
 .soft {
   background: var(--surface);
   box-shadow: 9px 9px 20px var(--shadow-dark), -9px -9px 20px var(--shadow-light);
-  border: 1px solid rgba(255,255,255,.58);
+  border: 1px solid rgba(255,255,255,.42);
+}
+body.dark-mode .soft {
+  border-color: rgba(255,255,255,.035);
 }
 .soft-inset {
   background: var(--surface);
@@ -70,6 +87,14 @@ h1 {
   background: linear-gradient(90deg, var(--accent), #e5d5a7);
   box-shadow: 2px 2px 5px var(--shadow-dark), -2px -2px 5px var(--shadow-light);
 }
+.theme-toggle {
+  display: inline-flex; align-items: center; justify-content: center; gap: 9px;
+  margin-top: 22px; padding: 11px 16px; border: 0; border-radius: 13px;
+  color: var(--text); font: 800 10px Inter, sans-serif; letter-spacing: 1px;
+  cursor: pointer; transition: transform .2s, color .2s;
+}
+.theme-toggle:hover { transform: translateY(-2px); color: var(--accent); }
+.theme-toggle:focus-visible { outline: 3px solid var(--accent); outline-offset: 4px; }
 .status-card { padding: 26px; border-radius: 26px; margin: 8px 0 26px; }
 .section-label {
   display: flex; align-items: center; gap: 10px;
@@ -175,7 +200,11 @@ footer a:hover { text-decoration: underline; }
   <header>
     <div class="brand-mark soft" aria-hidden="true">🐾</div>
     <h1>LUKA-XMD</h1>
-    <p class="tagline">Lukabrand · WhatsApp Bot · Wakanda Forever</p>
+    <p class="tagline">Lukabrand · WhatsApp Automation Bot</p>
+    <button class="theme-toggle soft" id="themeToggle" type="button" aria-label="Switch to dark mode" aria-pressed="false">
+      <span id="themeIcon" aria-hidden="true">🌙</span>
+      <span id="themeLabel">DARK MODE</span>
+    </button>
     <div class="gold-line"></div>
   </header>
 
@@ -253,12 +282,41 @@ footer a:hover { text-decoration: underline; }
   </section>
 
   <footer>
-    <p>❖ &nbsp; WAKANDA FOREVER &nbsp; · &nbsp; LUKA-XMD &nbsp; ❖</p>
+    <p>❖ &nbsp; LUKA-XMD &nbsp; · &nbsp; WHATSAPP AUTOMATION &nbsp; ❖</p>
     <p style="margin-top:9px">Built by <a href="https://github.com/Lukabrand" target="_blank" rel="noopener noreferrer">LUKABRAND</a>
       &nbsp;·&nbsp; <a href="https://wa.me/255768619068" target="_blank" rel="noopener noreferrer">Contact Owner</a></p>
     <p class="footer-brand">ᴘᴏᴡᴇʀᴇᴅ ʙʏ ʟᴜᴋᴀʙʀᴀɴᴅ</p>
     <p style="margin-top:8px">© 2026 LUKABRAND · All rights reserved</p>
   </footer>
 </main>
+<script>
+(() => {
+  const body = document.body;
+  const button = document.getElementById('themeToggle');
+  const icon = document.getElementById('themeIcon');
+  const label = document.getElementById('themeLabel');
+
+  let savedTheme = null;
+  try { savedTheme = localStorage.getItem('luka-xmd-theme'); } catch (_) {}
+
+  const prefersDark = window.matchMedia &&
+    window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const startDark = savedTheme ? savedTheme === 'dark' : prefersDark;
+
+  function applyTheme(dark) {
+    body.classList.toggle('dark-mode', dark);
+    icon.textContent = dark ? '☀️' : '🌙';
+    label.textContent = dark ? 'LIGHT MODE' : 'DARK MODE';
+    button.setAttribute('aria-pressed', String(dark));
+    button.setAttribute('aria-label', dark ? 'Switch to light mode' : 'Switch to dark mode');
+    try { localStorage.setItem('luka-xmd-theme', dark ? 'dark' : 'light'); } catch (_) {}
+  }
+
+  applyTheme(startDark);
+  button.addEventListener('click', () => {
+    applyTheme(!body.classList.contains('dark-mode'));
+  });
+})();
+</script>
 </body>
 </html>
