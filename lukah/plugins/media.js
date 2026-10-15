@@ -201,7 +201,7 @@ addCmd({
         try {
             const api  = `https://api.lolhuman.xyz/api/ssweb?apikey=free&url=${encodeURIComponent(url)}`;
             const res  = await require('axios').get(api, { responseType: 'arraybuffer' }).catch(() => null);
-const { channelCtx } = require('../../guru/utils/gmdFunctions2');
+const { channelCtx } = require('../../luka/utils/gmdFunctions2');
             if (!res?.data) return ctx.sock.sendMessage(ctx.from, { text: '❌ Screenshot failed.', contextInfo: channelCtx() }, { quoted: ctx.m });
             await ctx.send({
                 image:   Buffer.from(res.data),
