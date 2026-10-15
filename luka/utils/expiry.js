@@ -1,22 +1,5 @@
 'use strict';
 
-// ╭═══〘〘━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━〙〙═══╮
-// ║  🐾  LUKA-XMD  —  expiry.js  (ULTRA SENSITIVE v2)                     ║
-// ║  🔒  Bot licence / deployment expiry gate                                     ║
-// ║  ⚡  Features:                                                                ║
-// ║      • Checks every 30 MINUTES (was 6 hours)                                 ║
-// ║      • Sends WhatsApp alert 14, 7, 5, 3, 2, 1 days before expiry              ║
-// ║      • Sends hourly alert on expiry day                                      ║
-// ║      • Locks ALL commands 1 hour after expiry (grace period)                 ║
-// ║      • Sends final shutdown message before process.exit                      ║
-// ║      • Countdown timer in .alive and .menu                                   ║
-// ║      • Progress bar showing time remaining                                   ║
-// ║      • Hard-expires on exact millisecond of expiry                           ║
-// ║                                                                              ║
-// ║  Set EXPIRY_DATE in Heroku config vars: YYYY-MM-DD                           ║
-// ║  e.g.  EXPIRY_DATE=2026-08-01                                                ║
-// ║  Leave blank or unset for no expiry.                                        ║
-// ╰═══〘〘━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━〙〙═══╯ 
 const logger = require('./logger');
 
 // Accepted date formats
