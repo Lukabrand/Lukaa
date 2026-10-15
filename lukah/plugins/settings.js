@@ -261,7 +261,7 @@ addCmd({
                 }
 
                 if (value === false || ['false', 'off', 'no', '0'].includes(v)) {
-                    return 'OFF';
+                    return 'off';
                 }
 
                 return show(value);
