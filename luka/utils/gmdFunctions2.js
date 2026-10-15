@@ -37,12 +37,12 @@ function channelCtx() {
         // External ad card — rich preview in DMs
         externalAdReply: {
             title:                 config.BOT_NAME,
-            body:                  '🐾 Follow our WhatsApp Channel',
+            body:                  '⚡Follow our WhatsApp Channel',
             mediaType:             1,
             renderLargerThumbnail: false,
             showAdAttribution:     true,
             sourceUrl:             config.CHANNEL_URL,
-            thumbnailUrl:          'https://i.ibb.co/PZjVDnBM/upload-1778637749645-4b17ed31-jpg.jpg',
+            thumbnailUrl:          'https://i.imgur.com/YbnhBIV.png',
         },
     };
 }
@@ -287,7 +287,7 @@ const BIO_TEMPLATES = [
     () => `🌟 Powered by GuruTech | ${new Date().toLocaleDateString('en-KE')}`,
     () => `🔥 ${config.BOT_NAME} is live! | +${config.OWNER_NUMBER}`,
     () => `💚 Serving users 24/7 | ${config.BOT_NAME} 🐾`,
-    () => `🐾 BLACK PANTHER MD | GuruTech 🚀`,
+    () => `⚡LUKA-XMD | Lukabrand`,
 ];
 
 async function PantherAutoBio(sock) {
