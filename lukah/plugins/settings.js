@@ -257,11 +257,11 @@ addCmd({
                 const v = String(value).toLowerCase().trim();
 
                 if (value === true || ['true', 'on', 'yes', '1'].includes(v)) {
-                    return '🟢 ON';
+                    return 'ON';
                 }
 
                 if (value === false || ['false', 'off', 'no', '0'].includes(v)) {
-                    return '🔴 OFF';
+                    return 'OFF';
                 }
 
                 return show(value);
