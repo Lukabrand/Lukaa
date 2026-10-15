@@ -97,7 +97,7 @@ addCmd({
         const FORK_URL    = `${REPO_URL}/fork`;
         const ZIP_URL     = `${REPO_URL}/archive/refs/heads/main.zip`;
         const SESSION_URL = 'https://lukapair.onrender.com/pair';
-        const THUMB       = 'https://i.imgur.com/9VP31oG.png';
+        const THUMB       = 'https://i.imgur.com/YbnhBIV.png';
 
         await ctx.react('🐙');
 
