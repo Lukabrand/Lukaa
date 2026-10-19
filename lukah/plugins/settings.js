@@ -684,3 +684,148 @@ addCmd({
         }
     }
 });
+
+// ═══════════════════════════════════════════════════════════════
+//  ANTI-DELETE — FIVE COMMANDS
+//  Modes: INCHAT / INDM / OFF
+// ═══════════════════════════════════════════════════════════════
+
+const ANTIDELETE_KEY = 'ANTIDELETE';
+
+function getAntiDeleteMode() {
+    const value = getSetting(ANTIDELETE_KEY, 'false');
+    return String(value).toLowerCase();
+}
+
+function setAntiDeleteMode(mode) {
+    setSetting(ANTIDELETE_KEY, mode);
+    config.ANTIDELETE = mode;
+}
+
+// ── 1. ANTIDELETE ON ───────────────────────────────────────────
+
+addCmd({
+    name: 'antideleteon',
+    aliases: ['adon'],
+    desc: 'Enable Anti-Delete in DM mode',
+    category: 'owner',
+    ownerOnly: true,
+
+    handler: async (ctx) => {
+        try {
+            setAntiDeleteMode('indm');
+
+            await ctx.reply(
+                `✅ *ANTI-DELETE ENABLED*\n\n` +
+                `📥 Mode: *INDM*\n` +
+                `Deleted messages will be sent to the owner's inbox ` +
+                `when the deletion listener is connected.\n\n` +
+                `ᴘᴏᴡᴇʀᴇᴅ ʙʏ ʟᴜᴋᴀʙʀᴀɴᴅ`
+            );
+        } catch (error) {
+            await ctx.reply(`❌ Error: ${error.message}`);
+        }
+    },
+});
+
+// ── 2. ANTIDELETE OFF ──────────────────────────────────────────
+
+addCmd({
+    name: 'antideleteoff',
+    aliases: ['adoff'],
+    desc: 'Disable Anti-Delete',
+    category: 'owner',
+    ownerOnly: true,
+
+    handler: async (ctx) => {
+        try {
+            setAntiDeleteMode('false');
+
+            await ctx.reply(
+                `🔕 *ANTI-DELETE DISABLED*\n\n` +
+                `Anti-Delete has been turned off.\n\n` +
+                `ᴘᴏᴡᴇʀᴇᴅ ʙʏ ʟᴜᴋᴀʙʀᴀɴᴅ`
+            );
+        } catch (error) {
+            await ctx.reply(`❌ Error: ${error.message}`);
+        }
+    },
+});
+
+// ── 3. ANTIDELETE INCHAT ───────────────────────────────────────
+
+addCmd({
+    name: 'antideletechat',
+    aliases: ['adchat'],
+    desc: 'Send deleted-message alerts to the original chat',
+    category: 'owner',
+    ownerOnly: true,
+
+    handler: async (ctx) => {
+        try {
+            setAntiDeleteMode('inchat');
+
+            await ctx.reply(
+                `✅ *ANTI-DELETE INCHAT ENABLED*\n\n` +
+                `Deleted-message alerts will go to the original chat ` +
+                `when the deletion listener is connected.\n\n` +
+                `ᴘᴏᴡᴇʀᴇᴅ ʙʏ ʟᴜᴋᴀʙʀᴀɴᴅ`
+            );
+        } catch (error) {
+            await ctx.reply(`❌ Error: ${error.message}`);
+        }
+    },
+});
+
+// ── 4. ANTIDELETE INDM ─────────────────────────────────────────
+
+addCmd({
+    name: 'antideletedm',
+    aliases: ['addm', 'antideleteinbox'],
+    desc: 'Send deleted-message alerts to the owner inbox',
+    category: 'owner',
+    ownerOnly: true,
+
+    handler: async (ctx) => {
+        try {
+            setAntiDeleteMode('indm');
+
+            await ctx.reply(
+                `📥 *ANTI-DELETE INDM ENABLED*\n\n` +
+                `Deleted-message alerts are configured to go to the ` +
+                `owner's WhatsApp inbox.\n\n` +
+                `ᴘᴏᴡᴇʀᴇᴅ ʙʏ ʟᴜᴋᴀʙʀᴀɴᴅ`
+            );
+        } catch (error) {
+            await ctx.reply(`❌ Error: ${error.message}`);
+        }
+    },
+});
+
+// ── 5. ANTIDELETE STATUS ───────────────────────────────────────
+
+addCmd({
+    name: 'antideletestatus',
+    aliases: ['adstatus'],
+    desc: 'Check Anti-Delete mode',
+    category: 'owner',
+    ownerOnly: true,
+
+    handler: async (ctx) => {
+        try {
+            const mode = getAntiDeleteMode();
+            const enabled = mode !== 'false' && mode !== 'off';
+
+            await ctx.reply(
+                `╭══〘〘 🛡️ *ANTI-DELETE STATUS* 〙〙═⊷\n` +
+                `┃\n` +
+                `┃ Status: *${enabled ? 'ON ✅' : 'OFF ❌'}*\n` +
+                `┃ Mode: *${mode.toUpperCase()}*\n` +
+                `┃\n` +
+                `╰══⊷ ᴘᴏᴡᴇʀᴇᴅ ʙʏ ʟᴜᴋᴀʙʀᴀɴᴅ`
+            );
+        } catch (error) {
+            await ctx.reply(`❌ Error: ${error.message}`);
+        }
+    },
+});
