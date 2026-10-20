@@ -50,16 +50,7 @@
       "description": "Auto-view WhatsApp statuses. Set true or false.",
       "required": false,
       "value": "true"
-    },
-    "AUTO_BIO": {
-      "description": "Auto-update bot profile bio every 10 minutes. Set true or false.",
-      "required": false,
-      "value": "true"
-    },
-    "AUTO_REACT": {
-      "description": "Auto-react to incoming messages with random emojis. Set true or false.",
-      "required": false,
-      "value": "false"
+    
     },
     "BOT_PREFIX": {
       "description": "Command prefix character (e.g., ., !, /)",
