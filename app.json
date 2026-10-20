@@ -1,34 +1,24 @@
 {
-  "name": "LUKA-XMD",
+  "name": "atassa-md",
   "version": "5.0.0",
-  "description": "LUKA-XMD - A Powerful Multi-Device WhatsApp Bot built by ʟᴜᴋᴀʙʀᴀɴᴅ to Enhance Your WhatsApp Experience",
-  "logo": "https://i.imgur.com/9VP31oG.png",
-  "keywords": ["black-panther", "koyoteh", "whatsapp-bot", "black-panther-md"],
+  "description": "Atassa, a Multi Device Whatsapp Bot built by Gifted Tech to Enhance Whatsapp Communication Experience",
+  "logo": "https://files.gifted.co.ke/image/u90mimage.jpg",
+  "keywords": ["atassa", "gifted-baileys", "gifted-btns", "gifted-api"],
   "success_url": "/",
-  "stack": "heroku-24",
+  "stack": "heroku-22",
   "env": {
-       "SESSION_ID": {
+    "SESSION_ID": {
       "description": "Your bot SESSION_ID. Get one from the pairing session page.",
       "required": true,
       "value": ""
     },
-    "BOT_NAME": {
-      "description": "Name of your bot",
-      "required": false,
-      "value": "LUKA-XMD"
-    },
-    "OWNER_NAME": {
-      "description": "Owner name",
-      "required": false,
-      "value": "ʟᴜᴋᴀʙʀᴀɴᴅ"
-    },
     "MODE": {
-      "description": "Bot mode: 'public' (everyone can use) or 'private' (only bot owner)",
+      "description": "Worktype of your bot. Use 'public' (everyone can use it) or 'private' (only bot number).",
       "required": true,
       "value": "public"
     },
     "TIME_ZONE": {
-      "description": "Your timezone (e.g., Africa/Nairobi, America/New_York, Asia/Kolkata)",
+      "description": "Your timezone e.g. Africa/Nairobi, America/New_York, Asia/Kolkata",
       "required": true,
       "value": "Africa/Nairobi"
     },
@@ -43,12 +33,7 @@
       "value": "true"
     },
     "DATABASE_URL": {
-      "description": "PostgreSQL connection URL. Leave blank to use auto-provisioned Heroku Postgres, or supply your own (Neon, Supabase, etc.). Falls back to SQLite if empty.",
-      "required": false,
-      "value": ""
-    },
-    "BOT_EXPIRY_DATE": {
-      "description": "Bot license expiry date (YYYY-MM-DD). Leave blank if bot has no expiry. When set, the menu will show ACTIVE/EXPIRY SOON/EXPIRED status.",
+      "description": "PostgreSQL connection URL. Leave blank to use the auto-provisioned Heroku Postgres addon, or supply your own (Neon, Supabase, etc.). Falls back to SQLite if empty and no addon is attached.",
       "required": false,
       "value": ""
     }
