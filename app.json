@@ -1,92 +1,80 @@
-
 {
-  "name": "KEITH-MD",
-  "description": "This is a simple whatsapp bot built with nodejs to make your WhatsApp enjoyable",
-  "keywords": [
-    "bot",
-    "whatsapp",
-    "keith",
-    "whatsapp-stickers",
-    "anime",
-    "whatsapp-bot",
-    "whatsapp-sticker-bot",
-    "whatsapp-botto",
-    "baileys",
-    "baileys-md",
-    "md-bot"
-  ],
-  "website": "https://keithsite.top",
-  "repository": "https://github.com/kkeizzah25/KEITH-MD.git",
-  "logo": "https://i.ibb.co/PsZnb9NH/0d81ac6b1fb1.jpg",
+  "name": "ULTRA GURU MD",
+  "version": "5.0.0",
+  "description": "ULTRA GURU - A Powerful Multi-Device WhatsApp Bot built by GuruTech to Enhance Your WhatsApp Experience",
+  "logo": "https://res.cloudinary.com/dqxlb29uz/image/upload/v1780267810/bwm_uploads/media-1780267810008.jpg",
+  "keywords": ["ultra-guru", "gurutech", "whatsapp-bot", "guru-baileys", "guru-md"],
   "success_url": "/",
+  "stack": "heroku-24",
   "env": {
-    "OWNER_NUMBER": {
-      "description": "Bot owner phone number without + or spaces. Example: 254748387615, 254796299159",
-      "required": false
+    "SESSION_ID": {
+      "description": "Your WhatsApp session ID. Get it by running the bot locally or using the pairing page.",
+      "required": true,
+      "value": ""
     },
-    "SESSION": {
-      "description": "Your WhatsApp session ID",
-      "required": true
+    "BOT_NAME": {
+      "description": "Name of your bot",
+      "required": false,
+      "value": "ULTRA GURU"
     },
-    
-    
-    "DATABASE_URL": {
-      "description": "insert your database url",
-      "value": "",
-      "required": false
-    },
-    
-    "AUTOVIEW_STATUS": {
-      "description": "Auto view WhatsApp status (true/false)",
-      "value": "true",
-      "required": false
-    },
-    "AUTOLIKE_STATUS": {
-      "description": "Auto like WhatsApp status (true/false)",
-      "value": "true",
-      "required": false
-    },
-    "STATUS_LIKE_EMOJIS": {
-      "description": "Emojis to use for liking status (comma-separated)",
-      "value": "💚,🩵,💚",
-      "required": false
-    },
-    
-    
-    "PREFIX": {
-      "description": "Bot command prefix",
-      "value": ".",
-      "required": false
-    },
-    
-    "BOT_EXPIRATION_DATE": {
-      "description": "choose your preferred bot expiration date in the format dd/mm/yy",
-      "value": "11/03/2027",
-      "required": false
-    },
-    
-
-    
-    "BOT_PIC": {
-      "description": "Bot profile picture URL",
-      "value": "https://i.ibb.co/PsZnb9NH/0d81ac6b1fb1.jpg",
-      "required": false
-    },
-    "BOTNAME": {
-      "description": "Bot display name",
-      "value": "KEITH-MD",
-      "required": false
+    "OWNER_NAME": {
+      "description": "Owner name",
+      "required": false,
+      "value": "GuruTech"
     },
     "MODE": {
-      "description": "Bot operation mode (public/private)",
-      "value": "public",
-      "required": false
+      "description": "Bot mode: 'public' (everyone can use) or 'private' (only bot owner)",
+      "required": true,
+      "value": "public"
+    },
+    "TIME_ZONE": {
+      "description": "Your timezone (e.g., Africa/Nairobi, America/New_York, Asia/Kolkata)",
+      "required": true,
+      "value": "Africa/Nairobi"
+    },
+    "AUTO_LIKE_STATUS": {
+      "description": "Auto-like WhatsApp statuses. Set true or false.",
+      "required": false,
+      "value": "true"
+    },
+    "AUTO_READ_STATUS": {
+      "description": "Auto-view WhatsApp statuses. Set true or false.",
+      "required": false,
+      "value": "true"
+    },
+    "DATABASE_URL": {
+      "description": "PostgreSQL connection URL. Leave blank to use auto-provisioned Heroku Postgres, or supply your own (Neon, Supabase, etc.). Falls back to SQLite if empty.",
+      "required": false,
+      "value": ""
+    },
+    "BOT_EXPIRY_DATE": {
+      "description": "Bot license expiry date (YYYY-MM-DD). Leave blank if bot has no expiry. When set, the menu will show ACTIVE/EXPIRY SOON/EXPIRED status.",
+      "required": false,
+      "value": ""
     }
   },
-  "buildpacks": [
+  "addons": [
     {
-      "url": "https://github.com/heroku/heroku-buildpack-nodejs.git"
+      "plan": "heroku-postgresql:essential-0",
+      "as": "DATABASE"
     }
   ],
-  "stack": "heroku-24"
+  "buildpacks": [
+    { "url": "heroku/nodejs" },
+    { "url": "https://github.com/jonathanong/heroku-buildpack-ffmpeg-latest" }
+  ],
+  "formation": {
+    "web": {
+      "quantity": 1,
+      "size": "basic"
+    }
+  },
+  "environments": {
+    "test": {
+      "addons": [],
+      "env": {
+        "DATABASE_URL": ""
+      }
+    }
+  }
 }
