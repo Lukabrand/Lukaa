@@ -1,5 +1,11 @@
+setup:
+  addons:
+    - plan: heroku-postgresql:essential-0
+      as: DATABASE
+
 build:
   docker:
-      worker: Dockerfile
+    web: Dockerfile
+
 run:
-   worker:   npm run keith
+  web: npm start
