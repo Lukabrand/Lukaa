@@ -1,8 +1,8 @@
 {
-  "name": "BLACK PANTHER MD",
+  "name": "LUKA-XMD",
   "version": "5.0.0",
-  "description": "BLACK PANTHER - A Powerful Multi-Device WhatsApp Bot built by Koyoteh to Enhance Your WhatsApp Experience",
-  "logo": "https://res.cloudinary.com/dqxlb29uz/image/upload/v1780267810/bwm_uploads/media-1780267810008.jpg",
+  "description": "LUKA-XMD - A Powerful Multi-Device WhatsApp Bot built by ʟᴜᴋᴀʙʀᴀɴᴅ to Enhance Your WhatsApp Experience",
+  "logo": "https://i.imgur.com/YbnhBIV.png",
   "keywords": ["black-panther", "koyoteh", "whatsapp-bot", "black-panther-md"],
   "success_url": "/",
   "stack": "heroku-24",
@@ -15,12 +15,12 @@
     "BOT_NAME": {
       "description": "Name of your bot",
       "required": false,
-      "value": "BLACK PANTHER MD"
+      "value": "LUKA-XMD"
     },
     "OWNER_NAME": {
       "description": "Owner name",
       "required": false,
-      "value": "Koyoteh"
+      "value": "ʟᴜᴋᴀʙʀᴀɴᴅ"
     },
     "MODE": {
       "description": "Bot mode: 'public' (everyone can use) or 'private' (only bot owner)",
