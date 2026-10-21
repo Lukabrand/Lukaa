@@ -7,7 +7,7 @@
   "success_url": "/",
   "stack": "heroku-24",
   "env": {
-       "SESSION_ID": {
+    "SESSION_ID": {
       "description": "Your bot SESSION_ID. Get one from the pairing session page.",
       "required": true,
       "value": ""
@@ -60,8 +60,9 @@
     }
   ],
   "buildpacks": [
-    { "url": "heroku/nodejs" },
-    { "url": "https://github.com/jonathanong/heroku-buildpack-ffmpeg-latest" }
+    {
+      "url": "heroku/nodejs"
+    }
   ],
   "formation": {
     "web": {
