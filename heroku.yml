@@ -1,5 +1,11 @@
+setup:
+  addons:
+    - plan: heroku-postgresql:essential-0
+      as: DATABASE
+
 build:
   docker:
     web: Dockerfile
+
 run:
-  web: node --max-old-space-size=512 --expose-gc index.js
+  web: npm start
