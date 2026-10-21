@@ -1,89 +1,80 @@
 {
-  "name": "LUKA-AI",
-  "description": "This is a simple whatsapp bot built with nodejs to make your WhatsApp enjoyable",
-  "keywords": [
-    "bot",
-    "whatsapp",
-    "keith",
-    "whatsapp-stickers",
-    "anime",
-    "whatsapp-bot",
-    "whatsapp-sticker-bot",
-    "whatsapp-botto",
-    "baileys",
-    "baileys-md",
-    "md-bot"
-  ],
-  "website": "https://lukasite.top",
-  "repository": "https://github.com/Lucvoice/LUKA-AI",
-  "logo": "https://files.catbox.moe/5mmt2y.png",
+  "name": "LUKA-XMD",
+  "version": "5.0.0",
+  "description": "LUKA-XMD - A Powerful Multi-Device WhatsApp Bot built by ʟᴜᴋᴀʙʀᴀɴᴅ to Enhance Your WhatsApp Experience",
+  "logo": "https://i.imgur.com/9VP31oG.png",
+  "keywords": ["black-panther", "koyoteh", "whatsapp-bot", "black-panther-md"],
   "success_url": "/",
+  "stack": "heroku-24",
   "env": {
-    "OWNER_NUMBER": {
-      "description": "Bot owner phone number without + or spaces. Example: 2557",
-      "required": false
+       "SESSION_ID": {
+      "description": "Your bot SESSION_ID. Get one from the pairing session page.",
+      "required": true,
+      "value": ""
     },
-    "SESSION": {
-      "description": "Your WhatsApp session ID",
-      "required": true
-    },
-    "AUTOVIEW_STATUS": {
-      "description": "Auto view WhatsApp status (true/false)",
-      "value": "true",
-      "required": false
-    },
-    "AUTOLIKE_STATUS": {
-      "description": "Auto like WhatsApp status (true/false)",
-      "value": "true",
-      "required": false
-    },
-    "STATUS_LIKE_EMOJIS": {
-      "description": "Emojis to use for liking status (comma-separated)",
-      "value": "💚,💜,❤️",
-      "required": false
-    },
-    "PREFIX": {
-      "description": "Bot command prefix",
-      "value": ".",
-      "required": false
-    },
-    "BOT_EXPIRATION_DATE": {
-      "description": "Choose your preferred bot expiration date in the format dd/mm/yy",
-      "value": "11/03/2027",
-      "required": false
-    },
-    "BOT_PIC": {
-      "description": "Bot profile picture URL",
-      "value": "https://files.catbox.moe/5mmt2y.png",
-      "required": false
-    },
-    "BOTNAME": {
-      "description": "Bot display name",
-      "value": "LUKA-AI",
-      "required": false
-    
+    "BOT_NAME": {
+      "description": "Name of your bot",
+      "required": false,
+      "value": "LUKA-XMD"
     },
     "OWNER_NAME": {
-      "description": "Your bot name",
-      "value": "LUKA-AI",
-      "required": false
+      "description": "Owner name",
+      "required": false,
+      "value": "ʟᴜᴋᴀʙʀᴀɴᴅ"
     },
     "MODE": {
-      "description": "Bot operation mode (public/private)",
-      "value": "public",
-      "required": false
+      "description": "Bot mode: 'public' (everyone can use) or 'private' (only bot owner)",
+      "required": true,
+      "value": "public"
+    },
+    "TIME_ZONE": {
+      "description": "Your timezone (e.g., Africa/Nairobi, America/New_York, Asia/Kolkata)",
+      "required": true,
+      "value": "Africa/Nairobi"
+    },
+    "AUTO_LIKE_STATUS": {
+      "description": "Auto-like WhatsApp statuses. Set true or false.",
+      "required": false,
+      "value": "true"
+    },
+    "AUTO_READ_STATUS": {
+      "description": "Auto-view WhatsApp statuses. Set true or false.",
+      "required": false,
+      "value": "true"
+    },
+    "DATABASE_URL": {
+      "description": "PostgreSQL connection URL. Leave blank to use auto-provisioned Heroku Postgres, or supply your own (Neon, Supabase, etc.). Falls back to SQLite if empty.",
+      "required": false,
+      "value": ""
+    },
+    "BOT_EXPIRY_DATE": {
+      "description": "Bot license expiry date (YYYY-MM-DD). Leave blank if bot has no expiry. When set, the menu will show ACTIVE/EXPIRY SOON/EXPIRED status.",
+      "required": false,
+      "value": ""
     }
   },
-  "buildpacks": [
-    {
-      "url": "https://github.com/heroku/heroku-buildpack-nodejs.git"
-    }
-  ],
-  "stack": "heroku-24",
   "addons": [
     {
       "plan": "heroku-postgresql:essential-0",
       "as": "DATABASE"
     }
-  ]
+  ],
+  "buildpacks": [
+    { "url": "heroku/nodejs" },
+    { "url": "https://github.com/jonathanong/heroku-buildpack-ffmpeg-latest" }
+  ],
+  "formation": {
+    "web": {
+      "quantity": 1,
+      "size": "basic"
+    }
+  },
+  "environments": {
+    "test": {
+      "addons": [],
+      "env": {
+        "DATABASE_URL": ""
+      }
+    }
+  }
 }
