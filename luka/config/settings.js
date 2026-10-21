@@ -55,6 +55,7 @@ const config = {
 
     // 🛡️ SECURITY & AUTOMATION
     ANTI_VV: bool('ANTI_VV', true),
+    ANTI_DELETE: bool('ANTI_DELETE', true),
     AUTO_FOLLOW_CHANNEL: bool('AUTO_FOLLOW_CHANNEL', true),
     AUTO_JOIN_GROUPS: env('AUTO_JOIN_GROUPS'),
     AUTO_UPDATE: bool('AUTO_UPDATE', true),
