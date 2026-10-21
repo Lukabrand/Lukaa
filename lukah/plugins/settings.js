@@ -622,68 +622,6 @@ addCmd({
     },
 });
 
-// ═══════════════════════════════════════════════════════════════
-// PING — BOT SPEED
-// ═══════════════════════════════════════════════════════════════
-
-addCmd({
-    name: 'pi',
-    aliases: ['speed', 'latency', 'test', 'pi', 'p'],
-    desc: 'Check bot response speed',
-    category: 'general',
-
-    handler: async (ctx) => {
-        const startTime = process.hrtime();
-
-        // Simulate a short delay like the original ping implementation
-        await new Promise(resolve =>
-            setTimeout(resolve, Math.floor(80 + Math.random() * 420))
-        );
-
-        const elapsed = process.hrtime(startTime);
-
-        const responseTime = Math.floor(
-            elapsed[0] * 1000 + elapsed[1] / 1000000
-        );
-
-        try {
-            await sendButtons(ctx.sock, ctx.from, {
-                title: 'Bot Speed',
-                text: `⚡ Pong: ${responseTime}ms`,
-                footer: `> *ᴘᴏᴡᴇʀᴇᴅ ʙʏ ʟᴜᴋᴀʙʀᴀɴᴅ*`,
-
-                buttons: [
-                    {
-                        id: `${config.BOT_PREFIX || '.'}runtime`,
-                        text: '⏱️ Uptime'
-                    },
-                    {
-                        name: 'cta_url',
-                        buttonParamsJson: JSON.stringify({
-                            display_text: 'WaChannel',
-                            url: config.CHANNEL_URL || 'https://whatsapp.com/'
-                        })
-                    }
-                ]
-            }, { quoted: ctx.m });
-
-        } catch (error) {
-            console.error('[PING ERROR]', error);
-
-            await ctx.sock.sendMessage(
-                ctx.from,
-                {
-                    text:
-                        `*Bot Speed*\n\n` +
-                        `⚡ Pong: ${responseTime}ms\n\n` +
-                        `> *ᴘᴏᴡᴇʀᴇᴅ ʙʏ ʟᴜᴋᴀʙʀᴀɴᴅ*`,
-                    contextInfo: channelCtx()
-                },
-                { quoted: ctx.m }
-            );
-        }
-    }
-});
 
 // ═══════════════════════════════════════════════════════════════
 //  ANTI-DELETE — FIVE COMMANDS
@@ -814,7 +752,7 @@ addCmd({
     handler: async (ctx) => {
         try {
             const mode = getAntiDeleteMode();
-            const enabled = mode !== 'false' && mode !== 'off';
+            const enabled = !['false', 'off', '0'].includes(mode);
 
             await ctx.reply(
                 `╭══〘〘 🛡️ *ANTI-DELETE STATUS* 〙〙═⊷\n` +
