@@ -430,7 +430,7 @@ addCmd({
         const card =
             `🐾 *${config.BOT_NAME}* 🐾\n` +
             `✦ *Open-Source WhatsApp Bot* ✦\n` +
-            `_GuruTech  ·  Built with ❤️_\n\n` +
+            `_Lukabrand  ·  Built with ❤️_\n\n` +
             `${sep}\n\n` +
             `🌿 *Branch*   ·  main\n` +
             `⚡ *Engine*   ·  Node.js + Baileys v7\n` +
@@ -455,7 +455,7 @@ addCmd({
         await sendButtons(ctx.sock, ctx.from, {
             title:  `🐾 ${config.BOT_NAME} — Source Code`,
             text:   card,
-            footer: `© GuruTech • ${config.BOT_NAME}`,
+            footer: `© Lukabrand • ${config.BOT_NAME}`,
             image:  { url: REPO_IMAGE },
             buttons: [
                 {
@@ -504,43 +504,80 @@ addCmd({
     category: 'general',
     handler: async (ctx) => {
         let ppUrl = null;
+
         try {
             ppUrl = await ctx.sock.profilePictureUrl(
-                config.OWNER_NUMBER + '@s.whatsapp.net', 'image'
+                config.OWNER_NUMBER + '@s.whatsapp.net',
+                'image'
             );
         } catch {}
 
         const ownerCard =
-     
-`╭══〘〘 👑 *OWNER INFO* 〙〙═⊷
-┃
-┃ 🐾 *Bot:* ${config.BOT_NAME}
-┃ 👑 *Name:* ${config.OWNER_NAME}
-┃ 📞 *Number:* +${config.OWNER_NUMBER}
-┃ 💬 *Chat:* wa.me/${config.OWNER_NUMBER}
-┃ 📡 *Channel:* ${config.CHANNEL_URL}
-┃
-╠════════════════════
-┃ 🔗 *GitHub:*
-┃ github.com/Lukabrand/LUKA-XMD
-┃
-┃ ⭐ _Star us if you love the bot!_
-┃
-╰═════════════════⊷`;
+            `👑 *OWNER INFORMATION* 👑\n` +
+            `🐾 ${config.BOT_NAME}\n` +
+            `_Your trusted WhatsApp assistant_\n\n` +
+            `✦ ───────────── ✦\n\n` +
+            `👨‍💻 *OWNER DETAILS*\n\n` +
+            `🏷️ *Name:* ${config.OWNER_NAME}\n` +
+            `📞 *Number:* +${config.OWNER_NUMBER}\n` +
+            `💬 *WhatsApp:* wa.me/${config.OWNER_NUMBER}\n\n` +
+            `✦ ───────────── ✦\n\n` +
+            `📡 *OFFICIAL CHANNEL*\n` +
+            `${config.CHANNEL_URL}\n\n` +
+            `✦ ───────────── ✦\n\n` +
+            `🌐 *GITHUB REPOSITORY*\n` +
+            `github.com/Lukabrand/LUKA-XMD\n\n` +
+            `⭐ _Star the repository if you love the bot!_\n` +
+            `_ᴘᴏᴡᴇʀᴇᴅ ʙʏ ʟᴜᴋᴀʙʀᴀɴᴅ_`;
 
-        if (ppUrl) {
-            await ctx.sock.sendMessage(
-                ctx.from,
-                { image: { url: ppUrl }, caption: ownerCard, contextInfo: channelCtx() },
-                { quoted: ctx.m }
-            );
-        } else {
-            await ctx.sock.sendMessage(
-                ctx.from,
-                { text: ownerCard, contextInfo: channelCtx() },
-                { quoted: ctx.m }
-            );
-        }
+        const ownerImage = ppUrl
+            ? { url: ppUrl }
+            : { url: REPO_IMAGE };
+
+        await sendButtons(ctx.sock, ctx.from, {
+            title: `👑 ${config.OWNER_NAME} — Owner Info`,
+            text: ownerCard,
+            footer: `© Lukabrand • ${config.BOT_NAME}`,
+            image: ownerImage,
+            buttons: [
+                {
+                    name: 'cta_url',
+                    buttonParamsJson: JSON.stringify({
+                        display_text: '💬 Chat with Owner',
+                        url: `https://wa.me/${config.OWNER_NUMBER}`,
+                        merchant_url: `https://wa.me/${config.OWNER_NUMBER}`,
+                    }),
+                },
+                {
+                    name: 'cta_url',
+                    buttonParamsJson: JSON.stringify({
+                        display_text: '📡 Join Channel',
+                        url: config.CHANNEL_URL,
+                        merchant_url: config.CHANNEL_URL,
+                    }),
+                },
+                {
+                    name: 'cta_url',
+                    buttonParamsJson: JSON.stringify({
+                        display_text: '🌐 View on GitHub',
+                        url: 'https://github.com/Lukabrand/LUKA-XMD',
+                        merchant_url: 'https://github.com/Lukabrand/LUKA-XMD',
+                    }),
+                },
+            ],
+        }, { quoted: ctx.m }).catch(async () => {
+            await ctx.sock.sendMessage(ctx.from, {
+                image: ownerImage,
+                caption: ownerCard,
+                contextInfo: channelCtx(),
+            }, { quoted: ctx.m }).catch(async () => {
+                await ctx.sock.sendMessage(ctx.from, {
+                    text: ownerCard,
+                    contextInfo: channelCtx(),
+                }, { quoted: ctx.m });
+            });
+        });
+
         await ctx.react('👑');
     },
 });
