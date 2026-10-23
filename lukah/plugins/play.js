@@ -102,7 +102,7 @@ async function sendMedia(ctx, query, format, asDocument = false) {
         response.mimetype = media.mimeType || 'video/mp4';
     }
 
-    const caption = `╭───〔 ${config.BOT_NAME || 'LUKA'} 〕
+    const caption = `╭───〔 ${config.BOT_NAME || 'LUKA-XMD'} 〕
 │ 🎵 *Title:* ${video.title}
 │ 📺 *Channel:* ${video.channel}
 │ 🔗 *Source:* ${video.url}
