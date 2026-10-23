@@ -1,9 +1,8 @@
 'use strict';
 
-const { guru } = require('../../luka');
-const { addCmd } = require('../../luka/connection/handlers');
-const config = require('../../luka/database/settings');
+const { addCmd } = require('../../luka/handlers/loader');
 const axios = require('axios');
+const config = require('../../luka/config/settings');
 const { channelCtx } = require('../../luka/utils/gmdFunctions2');
 
 const API_TIMEOUT = 60000;
@@ -398,7 +397,7 @@ async function sendVideo(ctx, query) {
             (resolved.duration
                 ? `⏱️ ${formatDuration(resolved.duration)}\n`
                 : '') +
-            `\n${config.BOT_NAME || 'LUKA-XMD'}\n${FOOTER}`,
+            `\n${config.BOT_NAME || 'BLACK PANTHER MD'}\n${FOOTER}`,
         contextInfo: channelCtx()
     }, { quoted: ctx.m });
 
