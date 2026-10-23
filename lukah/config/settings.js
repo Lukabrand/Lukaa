@@ -1,6 +1,6 @@
 import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
-const _s = require('../../guru/config/settings.js');
+const _s = require('../../luka/config/settings.js');
 
 export const botname      = _s.BOT_NAME      || 'BLACK PANTHER MD';
 export const prefix       = _s.BOT_PREFIX    || '.';
