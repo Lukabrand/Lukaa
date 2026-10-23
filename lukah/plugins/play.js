@@ -397,7 +397,7 @@ async function sendVideo(ctx, query) {
             (resolved.duration
                 ? `⏱️ ${formatDuration(resolved.duration)}\n`
                 : '') +
-            `\n${config.BOT_NAME || 'BLACK PANTHER MD'}\n${FOOTER}`,
+            `\n${config.BOT_NAME || 'LUKA-XMD'}\n${FOOTER}`,
         contextInfo: channelCtx()
     }, { quoted: ctx.m });
 
