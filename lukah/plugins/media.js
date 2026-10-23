@@ -1,12 +1,12 @@
 'use strict';
-const { addCmd }            = require('../../luka/handlers/loader');
+const { addCmd }            = require('../../guru/handlers/loader');
 const { downloadMediaMessage } = require('@whiskeysockets/baileys');
 const ffmpeg                = require('fluent-ffmpeg');
 const ffmpegPath            = require('ffmpeg-static');
 const fs                    = require('fs');
 const path                  = require('path');
 const Jimp                  = require('jimp');
-const config                = require('../../luka/config/settings');
+const config                = require('../../guru/config/settings');
 
 ffmpeg.setFfmpegPath(ffmpegPath);
 
@@ -201,7 +201,7 @@ addCmd({
         try {
             const api  = `https://api.lolhuman.xyz/api/ssweb?apikey=free&url=${encodeURIComponent(url)}`;
             const res  = await require('axios').get(api, { responseType: 'arraybuffer' }).catch(() => null);
-const { channelCtx } = require('../../luka/utils/gmdFunctions2');
+const { channelCtx } = require('../../guru/utils/gmdFunctions2');
             if (!res?.data) return ctx.sock.sendMessage(ctx.from, { text: '❌ Screenshot failed.', contextInfo: channelCtx() }, { quoted: ctx.m });
             await ctx.send({
                 image:   Buffer.from(res.data),

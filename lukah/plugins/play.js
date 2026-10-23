@@ -1,400 +1,266 @@
 'use strict';
+// ╔══════════════════════════════════════════════════════════════╗
+//  🐾  BLACK PANTHER MD  —  play.js
+//  🎵  .play · .ytmp3 · .ytmp4 · .ytvideo
+//  API: GuruTech API (api.gurutech.top)
+// ╚══════════════════════════════════════════════════════════════╝
 
-const { addCmd } = require('../../luka/handlers/loader');
-const yts = require('yt-search');
-const axios = require('axios');
+const { addCmd }     = require('../../guru/handlers/loader');
+const axios          = require('axios');
+const config         = require('../../guru/config/settings');
+const { channelCtx } = require('../../guru/utils/gmdFunctions2');
+const { guruApi }    = require('../../guru/utils/guruApi');
 
-const FOOTER = 'ᴘᴏᴡᴇʀᴇᴅ ʙʏ ʟᴜᴋᴀʙʀᴀɴᴅ';
+const API_TIMEOUT = 30000;
 
-const MAX_AUDIO_SIZE = 60 * 1024 * 1024;
-const MAX_VIDEO_SIZE = 100 * 1024 * 1024;
-const MIN_BUFFER_SIZE = 10 * 1024;
-
-// Configure your external downloader API endpoints here.
-// Each endpoint must return:
-// { success: true, result: { download_url: "https://..." } }
-const DOWNLOAD_APIS = {
-    audio: [
-        process.env.DOWNLOAD_API_AUDIO || '',
-        process.env.DOWNLOAD_API_AUDIO_2 || ''
-    ].filter(Boolean),
-
-    video: [
-        process.env.DOWNLOAD_API_VIDEO || '',
-        process.env.DOWNLOAD_API_VIDEO_2 || ''
-    ].filter(Boolean)
-};
-
-function cleanFilename(name, extension) {
-    const safe = String(name || 'media')
-        .replace(/[<>:"/\\|?*\x00-\x1F]/g, '')
-        .replace(/\s+/g, ' ')
-        .trim()
-        .slice(0, 100) || 'media';
-
-    return `${safe}.${extension}`;
+// ── Search YouTube ─────────────────────────────────────────────
+async function ytSearch(query) {
+    const data = await guruApi('yt-search', { q: query });
+    return data?.results || data?.items || data?.data || [];
 }
 
-function validBuffer(buffer) {
-    return Buffer.isBuffer(buffer) && buffer.length > MIN_BUFFER_SIZE;
+// ── Get YouTube info ───────────────────────────────────────────
+async function ytInfo(url) {
+    return await guruApi('yt-info', { url });
 }
 
-function getDownloadUrl(data) {
-    return (
-        data?.result?.download_url ||
-        data?.result?.url ||
-        data?.download_url ||
-        data?.url ||
-        data?.data?.download_url ||
-        data?.data?.url ||
-        null
-    );
-}
+// ════════════════════════════════════════════════════════════════
+//  🎵  PLAY  —  sends audio (mp3) via GuruTech API
+// ════════════════════════════════════════════════════════════════
+addCmd({
+    name:     'play',
+    aliases:  ['ytmp3', 'ytaudio', 'yta', 'music', 'song'],
+    desc:     'Download and send a song as audio',
+    usage:    'play <song name or YouTube URL>',
+    category: 'music',
+    handler: async (ctx) => {
+        if (!ctx.text)
+            return ctx.reply(`❌ *Provide a song name or YouTube link.*\n\nExample: \`${config.BOT_PREFIX}play mambichwa\``);
 
-function buildApiUrl(template, videoUrl) {
-    if (template.includes('{url}')) {
-        return template.replace('{url}', encodeURIComponent(videoUrl));
-    }
+        await ctx.react('🔍');
 
-    const separator = template.includes('?') ? '&' : '?';
-    return `${template}${separator}url=${encodeURIComponent(videoUrl)}`;
-}
-
-async function downloadFromApis(videoUrl, type) {
-    const endpoints = DOWNLOAD_APIS[type] || [];
-
-    for (const endpoint of endpoints) {
         try {
-            const apiUrl = buildApiUrl(endpoint, videoUrl);
+            let videoUrl, videoTitle, videoDuration, videoThumb;
 
-            const response = await axios.get(apiUrl, {
-                timeout: 25000,
-                responseType: 'json',
-                headers: {
-                    'User-Agent': 'BLACK-PANTHER-MD/1.0'
+            const isUrl = /youtu(be\.com|\.be)/i.test(ctx.text);
+
+            if (isUrl) {
+                videoUrl = ctx.text;
+                try {
+                    const info  = await ytInfo(videoUrl);
+                    videoTitle  = info?.title || ctx.text;
+                    videoDuration = info?.duration || '?';
+                    videoThumb  = info?.thumbnail || '';
+                } catch {
+                    videoTitle  = ctx.text;
+                    videoDuration = '?';
+                    videoThumb  = '';
                 }
-            });
-
-            const url = getDownloadUrl(response.data);
-
-            if (!url || !/^https?:\/\//i.test(url)) {
-                continue;
+            } else {
+                const results = await ytSearch(ctx.text).catch(() => []);
+                if (!results?.length) {
+                    await ctx.react('❌');
+                    return ctx.sock.sendMessage(ctx.from, {
+                        text: `❌ No results found for *${ctx.text}*. Try a different song name.`,
+                        contextInfo: channelCtx(),
+                    }, { quoted: ctx.m });
+                }
+                const top     = results[0];
+                videoUrl      = top.url  || top.link || `https://youtu.be/${top.id}`;
+                videoTitle    = top.title || ctx.text;
+                videoDuration = top.duration || top.timestamp || '?';
+                videoThumb    = top.thumbnail || top.image || '';
             }
 
-            const mediaResponse = await axios.get(url, {
-                timeout: 60000,
+            await ctx.react('⬇️');
+
+            // Download mp3 via GuruTech
+            const mp3Data = await guruApi('yt-mp3', { url: videoUrl });
+            const mp3Url  = mp3Data?.download || mp3Data?.url || mp3Data?.audio || mp3Data?.data?.download;
+
+            if (!mp3Url) {
+                await ctx.react('❌');
+                return ctx.sock.sendMessage(ctx.from, {
+                    text: `❌ Could not fetch audio for *${videoTitle}*.\nPlease try again later.`,
+                    contextInfo: channelCtx(),
+                }, { quoted: ctx.m });
+            }
+
+            const title     = mp3Data?.title || videoTitle;
+            const duration  = mp3Data?.duration || videoDuration;
+            const safeTitle = title.replace(/[^\w\s.-]/gi, '');
+            const thumb     = mp3Data?.thumbnail || videoThumb;
+
+            // Download buffer
+            const audioRes = await axios.get(mp3Url, {
                 responseType: 'arraybuffer',
-                maxContentLength: type === 'audio'
-                    ? MAX_AUDIO_SIZE + 1
-                    : MAX_VIDEO_SIZE + 1,
-                maxBodyLength: type === 'audio'
-                    ? MAX_AUDIO_SIZE + 1
-                    : MAX_VIDEO_SIZE + 1
+                timeout: API_TIMEOUT,
+                headers: { 'User-Agent': 'BlackPantherMD/2.0' },
+            });
+            const buffer = Buffer.from(audioRes.data);
+
+            if (!buffer || buffer.length < 0x2800) {
+                await ctx.react('❌');
+                return ctx.sock.sendMessage(ctx.from, {
+                    text: '❌ Failed to download audio. Please try again.',
+                    contextInfo: channelCtx(),
+                }, { quoted: ctx.m });
+            }
+
+            // Send info card with thumbnail
+            if (thumb) {
+                await ctx.sock.sendMessage(ctx.from, {
+                    image: { url: thumb },
+                    caption: `🎵 *${title}*\n⏱️ *Duration:* ${duration}\n\n_${config.BOT_NAME}_`,
+                    contextInfo: channelCtx(),
+                }, { quoted: ctx.m }).catch(() => {});
+            }
+
+            // Send as playable audio
+            await ctx.sock.sendMessage(ctx.from, {
+                audio:    buffer,
+                mimetype: 'audio/mpeg',
+                ptt:      false,
+            }, { quoted: ctx.m });
+
+            // Send as downloadable document
+            await ctx.sock.sendMessage(ctx.from, {
+                document: buffer,
+                mimetype: 'audio/mpeg',
+                fileName: `${safeTitle}.mp3`,
+                caption:  `🎵 *${title}*\n⏱️ *Duration:* ${duration}\n\n_${config.BOT_NAME}_`,
+            }, { quoted: ctx.m });
+
+            await ctx.react('✅');
+
+        } catch (err) {
+            console.error('[play]', err.message);
+            await ctx.react('❌');
+            await ctx.sock.sendMessage(ctx.from, {
+                text: `❌ Something went wrong. Please try again.\n\nError: ${err.message}`,
+                contextInfo: channelCtx(),
+            }, { quoted: ctx.m });
+        }
+    },
+});
+
+// ════════════════════════════════════════════════════════════════
+//  🎬  YTMP4  —  sends video via GuruTech API
+// ════════════════════════════════════════════════════════════════
+addCmd({
+    name:     'ytmp4',
+    aliases:  ['ytvideo', 'ytv', 'ytvid'],
+    desc:     'Download and send a YouTube video (mp4)',
+    usage:    'ytmp4 <YouTube URL or search query>',
+    category: 'music',
+    handler: async (ctx) => {
+        if (!ctx.text)
+            return ctx.reply(`❌ *Provide a YouTube URL or search query.*\n\nExample: \`${config.BOT_PREFIX}ytmp4 https://youtu.be/dQw4w9WgXcQ\``);
+
+        await ctx.react('🔍');
+
+        try {
+            let videoUrl, videoTitle, videoDuration, videoThumb;
+
+            const isUrl = /youtu(be\.com|\.be)/i.test(ctx.text);
+
+            if (isUrl) {
+                videoUrl = ctx.text;
+                try {
+                    const info  = await ytInfo(videoUrl);
+                    videoTitle  = info?.title || ctx.text;
+                    videoDuration = info?.duration || '?';
+                    videoThumb  = info?.thumbnail || '';
+                } catch {
+                    videoTitle = ctx.text;
+                    videoDuration = '?';
+                    videoThumb = '';
+                }
+            } else {
+                const results = await ytSearch(ctx.text).catch(() => []);
+                if (!results?.length) {
+                    await ctx.react('❌');
+                    return ctx.reply(`❌ No results found for *${ctx.text}*.`);
+                }
+                const top     = results[0];
+                videoUrl      = top.url || top.link || `https://youtu.be/${top.id}`;
+                videoTitle    = top.title || ctx.text;
+                videoDuration = top.duration || top.timestamp || '?';
+                videoThumb    = top.thumbnail || top.image || '';
+            }
+
+            await ctx.react('⬇️');
+
+            // Download mp4 via GuruTech
+            const mp4Data = await guruApi('yt-mp4', { url: videoUrl });
+            const mp4Url  = mp4Data?.download || mp4Data?.url || mp4Data?.video || mp4Data?.data?.download;
+
+            if (!mp4Url) {
+                await ctx.react('❌');
+                return ctx.reply(`❌ Could not fetch video for *${videoTitle}*.\nPlease try again later.`);
+            }
+
+            const title    = mp4Data?.title || videoTitle;
+            const duration = mp4Data?.duration || videoDuration;
+
+            await ctx.sock.sendMessage(ctx.from, {
+                video:    { url: mp4Url },
+                caption:  `🎬 *${title}*\n⏱️ *Duration:* ${duration}\n\n_${config.BOT_NAME}_`,
+                mimetype: 'video/mp4',
+            }, { quoted: ctx.m });
+
+            await ctx.react('✅');
+
+        } catch (err) {
+            console.error('[ytmp4]', err.message);
+            await ctx.react('❌');
+            await ctx.reply(`❌ Video download failed. Please try again.\n\nError: ${err.message}`);
+        }
+    },
+});
+
+// ════════════════════════════════════════════════════════════════
+//  🔍  YTSEARCH  —  search YouTube
+// ════════════════════════════════════════════════════════════════
+addCmd({
+    name:     'ytsearch',
+    aliases:  ['yts', 'youtubesearch'],
+    desc:     'Search YouTube for videos',
+    usage:    'ytsearch <query>',
+    category: 'music',
+    handler: async (ctx) => {
+        if (!ctx.text)
+            return ctx.reply(`❌ Provide a search query.\n\nExample: \`${config.BOT_PREFIX}ytsearch lofi beats\``);
+
+        await ctx.react('🔍');
+
+        try {
+            const results = await ytSearch(ctx.text);
+
+            if (!results?.length)
+                return ctx.reply(`❌ No results found for *${ctx.text}*.`);
+
+            const top5 = results.slice(0, 5);
+            let text = `🔍 *YouTube Search: "${ctx.text}"*\n\n`;
+
+            top5.forEach((v, i) => {
+                const url      = v.url || v.link || `https://youtu.be/${v.id}`;
+                const title    = v.title || 'Unknown';
+                const duration = v.duration || v.timestamp || '?';
+                const views    = v.views ? `👁 ${v.views}` : '';
+                text += `*${i + 1}.* ${title}\n`;
+                text += `   ⏱️ ${duration}  ${views}\n`;
+                text += `   🔗 ${url}\n\n`;
             });
 
-            const buffer = Buffer.from(mediaResponse.data);
+            text += `_Use \`.play <title>\` or \`.ytmp4 <url>\` to download_\n\n_${config.BOT_NAME}_`;
+            await ctx.reply(text);
+            await ctx.react('✅');
 
-            if (validBuffer(buffer)) {
-                return buffer;
-            }
-        } catch (error) {
-            console.error(`[PLAY] ${type} API failed:`, error.message);
-        }
-    }
-
-    return null;
-}
-
-async function searchYouTube(query) {
-    const result = await yts(query);
-
-    if (!result?.videos?.length) {
-        return null;
-    }
-
-    return result.videos[0];
-}
-
-async function getMedia(ctx, video, type) {
-    await ctx.react('⬇️');
-
-    const buffer = await downloadFromApis(video.url, type);
-
-    if (!buffer) {
-        await ctx.react('❌');
-        await ctx.reply(
-            `Unable to download this ${type}.\n\n` +
-            `The configured download APIs may be unavailable or incorrectly configured.\n\n` +
-            `Please try again later.\n\n${FOOTER}`
-        );
-
-        return;
-    }
-
-    const sock = ctx.sock;
-    const from = ctx.from;
-    const quoted = ctx.m ? { quoted: ctx.m } : {};
-
-    const title = video.title || 'Downloaded Media';
-    const filename = cleanFilename(
-        title,
-        type === 'audio' ? 'mp3' : 'mp4'
-    );
-
-    const size = buffer.length;
-
-    try {
-        if (type === 'audio') {
-            if (size > MAX_AUDIO_SIZE) {
-                await sock.sendMessage(
-                    from,
-                    {
-                        document: buffer,
-                        mimetype: 'audio/mpeg',
-                        fileName: filename,
-                        caption: `${title}\n\n${FOOTER}`
-                    },
-                    quoted
-                );
-            } else {
-                await sock.sendMessage(
-                    from,
-                    {
-                        audio: buffer,
-                        mimetype: 'audio/mpeg',
-                        fileName: filename,
-                        ptt: false
-                    },
-                    quoted
-                );
-            }
-        } else {
-            if (size > MAX_VIDEO_SIZE) {
-                await sock.sendMessage(
-                    from,
-                    {
-                        document: buffer,
-                        mimetype: 'video/mp4',
-                        fileName: filename,
-                        caption: `${title}\n\n${FOOTER}`
-                    },
-                    quoted
-                );
-            } else {
-                await sock.sendMessage(
-                    from,
-                    {
-                        video: buffer,
-                        mimetype: 'video/mp4',
-                        fileName: filename,
-                        caption: `${title}\n\n${FOOTER}`
-                    },
-                    quoted
-                );
-            }
-        }
-
-        await ctx.react('✅');
-    } catch (error) {
-        console.error('[PLAY] Send media error:', error.message);
-        await ctx.react('❌');
-        await ctx.reply(`Failed to send the media.\n\n${FOOTER}`);
-    }
-}
-
-async function runSearch(ctx, type) {
-    const query = String(ctx.text || '').trim();
-
-    if (!query) {
-        await ctx.react('❌');
-        return ctx.reply(
-            `Please provide a ${type === 'audio' ? 'song' : 'video'} name or URL.\n\n` +
-            `Example: ${ctx.prefix || '.'}${type === 'audio' ? 'play Faded Alan Walker' : 'video Alan Walker Faded'}\n\n` +
-            FOOTER
-        );
-    }
-
-    try {
-        await ctx.react('🔎');
-
-        let video;
-
-        if (/^https?:\/\/(www\.)?(youtube\.com|youtu\.be)\//i.test(query)) {
-            video = {
-                url: query,
-                title: 'YouTube Media',
-                timestamp: 'Unknown',
-                thumbnail: null
-            };
-        } else {
-            video = await searchYouTube(query);
-        }
-
-        if (!video) {
+        } catch (err) {
+            console.error('[ytsearch]', err.message);
             await ctx.react('❌');
-            return ctx.reply(`No YouTube results found.\n\n${FOOTER}`);
+            await ctx.reply('❌ YouTube search failed. Please try again.');
         }
-
-        const details =
-            `🎵 *Title:* ${video.title || 'Unknown'}\n` +
-            `⏱️ *Duration:* ${video.timestamp || 'Unknown'}\n` +
-            `🔗 *URL:* ${video.url}\n\n` +
-            `⬇️ Downloading ${type}...\n\n${FOOTER}`;
-
-        await ctx.reply(details);
-        await getMedia(ctx, video, type);
-    } catch (error) {
-        console.error('[PLAY] Search error:', error.message);
-        await ctx.react('❌');
-        await ctx.reply(
-            `An error occurred while searching or downloading.\n\n${FOOTER}`
-        );
-    }
-}
-
-async function runDirectDownload(ctx, type) {
-    const query = String(ctx.text || '').trim();
-
-    if (!query) {
-        await ctx.react('❌');
-        return ctx.reply(
-            `Please provide a direct media URL.\n\n` +
-            `Example: ${ctx.prefix || '.'}${type === 'audio' ? 'sendaudio' : 'sendvideo'} https://example.com/media\n\n` +
-            FOOTER
-        );
-    }
-
-    if (!/^https?:\/\//i.test(query)) {
-        await ctx.react('❌');
-        return ctx.reply(`Please provide a valid HTTP/HTTPS URL.\n\n${FOOTER}`);
-    }
-
-    try {
-        await ctx.react('⬇️');
-
-        const response = await axios.get(query, {
-            responseType: 'arraybuffer',
-            timeout: 60000,
-            maxContentLength: type === 'audio'
-                ? MAX_AUDIO_SIZE + 1
-                : MAX_VIDEO_SIZE + 1,
-            maxBodyLength: type === 'audio'
-                ? MAX_AUDIO_SIZE + 1
-                : MAX_VIDEO_SIZE + 1
-        });
-
-        const buffer = Buffer.from(response.data);
-
-        if (!validBuffer(buffer)) {
-            await ctx.react('❌');
-            return ctx.reply(
-                'The URL did not return a valid media file.\n\n' + FOOTER
-            );
-        }
-
-        const contentType = String(
-            response.headers['content-type'] || ''
-        ).toLowerCase();
-
-        if (
-            contentType.includes('text/html') ||
-            contentType.includes('application/json')
-        ) {
-            await ctx.react('❌');
-            return ctx.reply(
-                'The URL returned a webpage or JSON, not a media file.\n\n' +
-                FOOTER
-            );
-        }
-
-        const sock = ctx.sock;
-        const from = ctx.from;
-        const quoted = ctx.m ? { quoted: ctx.m } : {};
-
-        if (type === 'audio') {
-            await sock.sendMessage(
-                from,
-                {
-                    audio: buffer,
-                    mimetype: contentType.includes('ogg')
-                        ? 'audio/ogg'
-                        : 'audio/mpeg',
-                    ptt: false
-                },
-                quoted
-            );
-        } else {
-            await sock.sendMessage(
-                from,
-                {
-                    video: buffer,
-                    mimetype: contentType.includes('webm')
-                        ? 'video/webm'
-                        : 'video/mp4',
-                    caption: FOOTER
-                },
-                quoted
-            );
-        }
-
-        await ctx.react('✅');
-    } catch (error) {
-        console.error('[PLAY] Direct download error:', error.message);
-        await ctx.react('❌');
-        await ctx.reply(
-            `Failed to download media from that URL.\n\n${FOOTER}`
-        );
-    }
-}
-
-// 1. PLAY — search and download audio
-addCmd({
-    name: 'play',
-    aliases: ['ytmp3', 'yta'],
-    desc: 'Search YouTube and download audio',
-    usage: '.play song name',
-    category: 'downloader',
-
-    handler: async (ctx) => {
-        return runSearch(ctx, 'audio');
-    }
-});
-
-// 2. VIDEO — search and download video
-addCmd({
-    name: 'video',
-    aliases: ['ytmp4', 'mp4'],
-    desc: 'Search YouTube and download video',
-    usage: '.video video name',
-    category: 'downloader',
-
-    handler: async (ctx) => {
-        return runSearch(ctx, 'video');
-    }
-});
-
-// 3. SENDAUDIO — download audio from a direct URL
-addCmd({
-    name: 'sendaudio',
-    aliases: ['sendmp3', 'dlaudio'],
-    desc: 'Download audio from a direct URL',
-    usage: '.sendaudio https://example.com/audio.mp3',
-    category: 'downloader',
-
-    handler: async (ctx) => {
-        return runDirectDownload(ctx, 'audio');
-    }
-});
-
-// 4. SENDVIDEO — download video from a direct URL
-addCmd({
-    name: 'sendvideo',
-    aliases: ['sendmp4', 'dlvideo'],
-    desc: 'Download video from a direct URL',
-    usage: '.sendvideo https://example.com/video.mp4',
-    category: 'downloader',
-
-    handler: async (ctx) => {
-        return runDirectDownload(ctx, 'video');
-    }
+    },
 });
