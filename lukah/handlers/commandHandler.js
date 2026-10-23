@@ -1,6 +1,6 @@
 import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
-const loader = require('../../guru/handlers/loader.js');
+const loader = require('../../luka/handlers/loader.js');
 
 export const commands = loader.commands;
 
