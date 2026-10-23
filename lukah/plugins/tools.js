@@ -6,12 +6,12 @@
 //        QR → now in gurutech.js (GuruTech API, first registered)
 // ╚══════════════════════════════════════════════════════════════╝
 
-const { addCmd }    = require('../../guru/handlers/loader');
+const { addCmd }    = require('../../luka/handlers/loader');
 const axios         = require('axios');
-const config        = require('../../guru/config/settings');
-const { getTime, getDate } = require('../../guru/utils/helpers');
-const { channelCtx } = require('../../guru/utils/gmdFunctions2');
-const { sendButtons } = require('../../guru/utils/gmdFunctions2');
+const config        = require('../../luka/config/settings');
+const { getTime, getDate } = require('../../luka/utils/helpers');
+const { channelCtx } = require('../../luka/utils/gmdFunctions2');
+const { sendButtons } = require('../../luka/utils/gmdFunctions2');
 
 // ── Sticker ───────────────────────────────────────────────────
 addCmd({
