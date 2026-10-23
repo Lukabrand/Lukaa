@@ -6,10 +6,10 @@
 //       Search · Lyrics · Movie · GitHub · IP · Stalk · TTS
 // ╚══════════════════════════════════════════════════════════════╝
 
-const { addCmd }     = require('../../guru/handlers/loader');
-const config         = require('../../guru/config/settings');
-const { channelCtx, sendButtons } = require('../../guru/utils/gmdFunctions2');
-const { guruApi }    = require('../../guru/utils/guruApi');
+const { addCmd }     = require('../../luka/handlers/loader');
+const config         = require('../../luka/config/settings');
+const { channelCtx, sendButtons } = require('../../luka/utils/gmdFunctions2');
+const { guruApi }    = require('../../luka/utils/guruApi');
 
 // ════════════════════════════════════════════════════════════════
 //  🌤️  WEATHER
@@ -799,6 +799,6 @@ addCmd({
     category: 'tools',
     handler: async (ctx) => {
         ctx.text = ctx.args[0] || ctx.text;
-        return require('../../guru/handlers/loader').findCmd('wachek')?.handler(ctx);
+        return require('../../luka/handlers/loader').findCmd('wachek')?.handler(ctx);
     },
 });
