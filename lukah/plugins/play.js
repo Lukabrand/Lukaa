@@ -1,9 +1,8 @@
 'use strict';
 
-const { luka } = require('../../luka');
-const { addCmd } = require('../../luka/connection/handlers');
-const config = require('../../luka/database/settings');
+const { addCmd } = require('../../luka/handlers/loader');
 const axios = require('axios');
+const config = require('../../luka/config/settings');
 const { channelCtx } = require('../../luka/utils/gmdFunctions2');
 
 const API_TIMEOUT = 60000;
