@@ -1,6 +1,6 @@
 'use strict';
 
-const { guru } = require('../../luka');
+const { luka } = require('../../luka');
 const { addCmd } = require('../../luka/connection/handlers');
 const config = require('../../luka/database/settings');
 const axios = require('axios');
