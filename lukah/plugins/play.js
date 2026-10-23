@@ -1,9 +1,4 @@
 'use strict';
-// ╔══════════════════════════════════════════════════════════════╗
-//  🐾  BLACK PANTHER MD  —  play.js
-//  🎵  .play · .ytmp3 · .ytmp4 · .ytvideo
-//  API: GuruTech API (api.gurutech.top)
-// ╚══════════════════════════════════════════════════════════════╝
 
 const { addCmd }     = require('../../luka/handlers/loader');
 const axios          = require('axios');
@@ -15,8 +10,36 @@ const API_TIMEOUT = 30000;
 
 // ── Search YouTube ─────────────────────────────────────────────
 async function ytSearch(query) {
-    const data = await guruApi('yt-search', { q: query });
-    return data?.results || data?.items || data?.data || [];
+    try {
+        const response = await guruApi('yt-search', { q: query });
+
+        console.log(
+            '[YT-SEARCH RESPONSE]:',
+            JSON.stringify(response, null, 2)
+        );
+
+        if (Array.isArray(response)) {
+            return response;
+        }
+
+        const results =
+            response?.results ||
+            response?.items ||
+            response?.videos ||
+            response?.data?.results ||
+            response?.data?.items ||
+            response?.data?.videos ||
+            response?.data;
+
+        return Array.isArray(results) ? results : [];
+    } catch (err) {
+        console.error(
+            '[YT-SEARCH ERROR]:',
+            err.response?.data || err.message
+        );
+
+        throw err;
+    }
 }
 
 // ── Get YouTube info ───────────────────────────────────────────
