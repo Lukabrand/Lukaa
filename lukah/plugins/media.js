@@ -1,12 +1,12 @@
 'use strict';
-const { addCmd }            = require('../../guru/handlers/loader');
+const { addCmd }            = require('../../luka/handlers/loader');
 const { downloadMediaMessage } = require('@whiskeysockets/baileys');
 const ffmpeg                = require('fluent-ffmpeg');
 const ffmpegPath            = require('ffmpeg-static');
 const fs                    = require('fs');
 const path                  = require('path');
 const Jimp                  = require('jimp');
-const config                = require('../../guru/config/settings');
+const config                = require('../../luka/config/settings');
 
 ffmpeg.setFfmpegPath(ffmpegPath);
 
