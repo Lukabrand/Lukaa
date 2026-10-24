@@ -11,7 +11,7 @@ async function guruApi(action, payload = {}) {
         payload,
     }, {
         timeout: 30000,
-        headers: { 'Content-Type': 'application/json', 'User-Agent': 'BlackPantherMD/2.0' },
+        headers: { 'Content-Type': 'application/json', 'User-Agent': 'LukaXMD/2.0' },
     });
     return res.data;
 }
