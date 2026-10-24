@@ -1,47 +1,54 @@
 import { sendInteractive } from '../../lib/sendInteractive.js';
+
 export default async (context) => {
     const { client, m, text, fetchJson } = context;
-        await client.sendMessage(m.chat, { react: { text: '⌛', key: m.reactKey } });
+
+    await client.sendMessage(m.chat, {
+        react: { text: '⌛', key: m.reactKey }
+    });
 
     try {
-        if (!text) {
-            await client.sendMessage(m.chat, { react: { text: '❌', key: m.reactKey } }).catch(() => {});
-            return sendInteractive(client, m, "⚡ ──「 APK 」──\n▢ Provide an app name, you brainless creature!\n└──✦ 𝐁𝐋𝐀𝐂𝐊 𝐏𝐀𝐍𝐓𝐇𝐄𝐑 ┃ ᴹᴰ ✦──");
+        if (!text?.trim()) {
+            await client.sendMessage(m.chat, {
+                react: { text: '❌', key: m.reactKey }
+            }).catch(() => {});
+
+            return sendInteractive(client, m, `📦 *APK — LUKA-XMD*\n\n▢ Enter an app name.\n\nᴘᴏᴡᴇʀᴇᴅ ʙʏ ʟᴜᴋᴀʙʀᴀɴᴅ`);
         }
 
-        await client.sendMessage(m.chat, { react: { text: "⌛", key: m.reactKey } });
-
-        const data = await fetchJson(`https://ws75.aptoide.com/api/7/apps/search/query=${encodeURIComponent(text)}`);
-
-        if (!data?.datalist?.list?.length) {
-            await client.sendMessage(m.chat, { react: { text: "❌", key: m.reactKey } });
-            await client.sendMessage(m.chat, { react: { text: '❌', key: m.reactKey } }).catch(() => {});
-            return sendInteractive(client, m, "⚡ ──「 APK 」──\n▢ App not found!\n└──✦ 𝐁𝐋𝐀𝐂𝐊 𝐏𝐀𝐍𝐓𝐇𝐄𝐑 ┃ ᴹᴰ ✦──");
-        }
-
-        const app = data.datalist.list[0];
-        const apkUrl = app.file?.path;
-
-        if (!apkUrl) {
-            await client.sendMessage(m.chat, { react: { text: "❌", key: m.reactKey } });
-            await client.sendMessage(m.chat, { react: { text: '❌', key: m.reactKey } }).catch(() => {});
-            return sendInteractive(client, m, "⚡ ──「 APK 」──\n▢ APK download link not available!\n└──✦ 𝐁𝐋𝐀𝐂𝐊 𝐏𝐀𝐍𝐓𝐇𝐄𝐑 ┃ ᴹᴰ ✦──");
-        }
-
-        await client.sendMessage(
-            m.chat,
-            {
-                document: { url: apkUrl },
-                fileName: `${app.name}.apk`,
-                mimetype: "application/vnd.android.package-archive"
-            }
+        const data = await fetchJson(
+            `https://ws75.aptoide.com/api/7/apps/search/query=${encodeURIComponent(text.trim())}`
         );
 
-        await client.sendMessage(m.chat, { react: { text: "✅", key: m.reactKey } });
+        const app = data?.datalist?.list?.[0];
+        const apkUrl = app?.file?.path;
+
+        if (!apkUrl) {
+            await client.sendMessage(m.chat, {
+                react: { text: '❌', key: m.reactKey }
+            }).catch(() => {});
+
+            return sendInteractive(client, m, `❌ App or APK not found.\n\nLUKA-XMD`);
+        }
+
+        await client.sendMessage(m.chat, {
+            document: { url: apkUrl },
+            fileName: `${app.name.replace(/[<>:"/\\|?*]/g, '_')}.apk`,
+            mimetype: 'application/vnd.android.package-archive',
+            caption: `📦 ${app.name}\n\nLUKA-XMD`
+        });
+
+        await client.sendMessage(m.chat, {
+            react: { text: '✅', key: m.reactKey }
+        });
 
     } catch (error) {
-        await client.sendMessage(m.chat, { react: { text: "❌", key: m.reactKey } });
-        sendInteractive(client, m, `⚡ ──「 APK ERROR 」──
-▢ APK download failed, not my problem.\n▢ ` + error + "\n└──✦ 𝐁𝐋𝐀𝐂𝐊 𝐏𝐀𝐍𝐓𝐇𝐄𝐑 ┃ ᴹᴰ ✦──");
+        console.error('APK error:', error);
+
+        await client.sendMessage(m.chat, {
+            react: { text: '❌', key: m.reactKey }
+        }).catch(() => {});
+
+        await sendInteractive(client, m, `❌ APK download failed.\n\nLUKA-XMD`);
     }
 };
