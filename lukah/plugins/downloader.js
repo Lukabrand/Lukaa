@@ -1,9 +1,5 @@
 'use strict';
-// ╔══════════════════════════════════════════════════════════════╗
-//  🐾  BLACK PANTHER MD  —  downloader.js
-//  ⬇️  TikTok · Facebook · Instagram · Twitter/X
-//  (YouTube downloads moved to play.js)
-// ╚══════════════════════════════════════════════════════════════╝
+
 
 const { addCmd } = require('../../luka/handlers/loader');
 const axios      = require('axios');
