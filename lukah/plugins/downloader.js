@@ -1,354 +1,573 @@
-'use strict';
 
-const { addCmd }     = require('../../luka/handlers/loader');
-const axios          = require('axios');
-const config         = require('../../luka/config/settings');
-const { channelCtx, sendButtons } = require('../../luka/utils/gmdFunctions2');
-const { guruApi }    = require('../../luka/utils/guruApi');
+const {
+        gmd,
+        gitRepoRegex,
+        MAX_MEDIA_SIZE,
+        getFileSize,
+        getMimeCategory,
+        getMimeFromUrl,
+    } = require("../guru"),
+    GIFTED_DLS = require("gifted-dls"),
+    guruDls = new GIFTED_DLS(),
+    axios = require("axios"),
+    { sendButtons } = require("gifted-btns");
 
-// ── TikTok ────────────────────────────────────────────────────
-addCmd({
-    name: 'tiktok',
-    aliases: ['tt', 'tiktokdl'],
-    desc: 'Download TikTok video (no watermark)',
-    usage: 'tiktok <url>',
-    category: 'downloader',
-    handler: async (ctx) => {
-        const url = ctx.text;
-        if (!url || !url.includes('tiktok'))
-            return ctx.sock.sendMessage(ctx.from, { text: '❌ Provide a valid TikTok URL.\n\nExample: `.tiktok https://vm.tiktok.com/xxxxx`', contextInfo: channelCtx() }, { quoted: ctx.m });
-        await ctx.react('⏳');
+function extractButtonId(msg) {
+    if (!msg) return null;
+    if (msg.templateButtonReplyMessage?.selectedId)
+        return msg.templateButtonReplyMessage.selectedId;
+    if (msg.buttonsResponseMessage?.selectedButtonId)
+        return msg.buttonsResponseMessage.selectedButtonId;
+    if (msg.listResponseMessage?.singleSelectReply?.selectedRowId)
+        return msg.listResponseMessage.singleSelectReply.selectedRowId;
+    if (msg.interactiveResponseMessage) {
+        const nf = msg.interactiveResponseMessage.nativeFlowResponseMessage;
+        if (nf?.paramsJson) {
+            try { const p = JSON.parse(nf.paramsJson); if (p.id) return p.id; } catch {}
+        }
+        return msg.interactiveResponseMessage.buttonId || null;
+    }
+    return null;
+}
+
+gmd(
+    {
+        pattern: "gitclone",
+        category: "downloader",
+        react: "📦",
+        aliases: ["gitdl", "github", "git", "repodl", "clone"],
+        description: "Download GitHub repository as zip file",
+    },
+    async (from, Guru, conText) => {
+        const { q, mek, reply, react, sender, botName, newsletterJid } =
+            conText;
+
+        if (!q) {
+            await react("❌");
+            return reply(
+                `Please provide a GitHub repository link.\n\n*Usage:* .gitclone https://github.com/user/repo`,
+            );
+        }
+
+        if (!gitRepoRegex.test(q)) {
+            await react("❌");
+            return reply(
+                "Invalid GitHub link format. Please provide a valid GitHub repository URL.",
+            );
+        }
+
         try {
-            let vid = null, authorName = 'Unknown', titleText = '';
+            let [, user, repo] = q.match(gitRepoRegex) || [];
+            repo = repo.replace(/\.git$/, "").split("/")[0];
 
-            // Primary: GuruTech API
-            try {
-                const data = await guruApi('tiktok-dl', { url });
-                vid        = data?.video || data?.play || data?.nowm || data?.data?.play;
-                authorName = data?.author || data?.data?.author?.nickname || 'Unknown';
-                titleText  = (data?.title || data?.data?.title || '').slice(0, 100);
-            } catch {}
+            const apiUrl = `https://api.github.com/repos/${user}/${repo}`;
+            const zipUrl = `https://api.github.com/repos/${user}/${repo}/zipball`;
 
-            // Fallback: tiklydown
-            if (!vid) {
-                try {
-                    const res  = await axios.get(`https://api.tiklydown.eu.org/api/download?url=${encodeURIComponent(url)}`, { timeout: 15000, headers: { 'User-Agent': 'BlackPantherMD/2.0' } });
-                    vid        = res.data?.video?.noWatermark || res.data?.video?.watermark;
-                    authorName = res.data?.author?.name || 'Unknown';
-                    titleText  = (res.data?.title || '').slice(0, 100);
-                } catch {}
+            await reply(`Fetching repository *${user}/${repo}*...`);
+
+            const repoResponse = await axios.get(apiUrl);
+            if (!repoResponse.data) {
+                await react("❌");
+                return reply(
+                    "Repository not found or access denied. Make sure the repository is public.",
+                );
             }
+
+            const repoData = repoResponse.data;
+            const defaultBranch = repoData.default_branch || "main";
+            const filename = `${user}-${repo}-${defaultBranch}.zip`;
+
+            await Guru.sendMessage(
+                from,
+                {
+                    document: { url: zipUrl },
+                    fileName: filename,
+                    mimetype: "application/zip",
+                    contextInfo: {
+                        forwardingScore: 1,
+                        isForwarded: true,
+                        forwardedNewsletterMessageInfo: {
+                            newsletterJid: newsletterJid,
+                            newsletterName: botName,
+                            serverMessageId: 143,
+                        },
+                    },
+                },
+                { quoted: mek },
+            );
+
+            await react("✅");
+        } catch (error) {
+            console.error("GitClone error:", error);
+            await react("❌");
+
+            if (error.message?.includes("404")) {
+                return reply("Repository not found.");
+            } else if (error.message?.includes("rate limit")) {
+                return reply(
+                    "GitHub API rate limit exceeded. Please try again later.",
+                );
+            } else {
+                return reply(`Failed to download repository: ${error.message}`);
+            }
+        }
+    },
+);
+
+// ── Toxic-MD box formatter (shared across social downloaders) ─────────────────
+function toxicBox(title, lines, footer) {
+    return `╭─❏ 「 ${title} 」\n${lines.filter(Boolean).map(l => `│ ${l}`).join("\n")}\n╰───────────────────────────\n> _${footer}_`;
+}
+
+gmd(
+    {
+        pattern: "fb",
+        category: "downloader",
+        react: "📘",
+        aliases: ["fbdl", "facebookdl", "facebook"],
+        description: "Download Facebook videos. Usage: .fb <Facebook URL>",
+    },
+    async (from, Guru, conText) => {
+        const {
+            q,
+            mek,
+            reply,
+            react,
+            botName,
+            botFooter,
+            gmdBuffer,
+            toAudio,
+            KoyotehApi,
+            GuruApiKey,
+        } = conText;
+
+        if (!q) {
+            await react("❌");
+            return reply(toxicBox("FACEBOOK DOWNLOADER", [
+                "⚠️ Send a Facebook video URL.",
+                "Example: .fb https://fb.watch/xxx",
+            ], botFooter));
+        }
+
+        if (!q.includes("facebook.com") && !q.includes("fb.watch")) {
+            await react("❌");
+            return reply(toxicBox("FACEBOOK DOWNLOADER", ["❌ Invalid Facebook URL."], botFooter));
+        }
+
+        await react("⌛");
+        await reply(toxicBox("FACEBOOK DOWNLOADER", ["⬇️ Fetching video..."], botFooter));
+
+        try {
+            let videoUrl = null, title = "Facebook Video", thumbnail = null;
+
+            // Toxic-MD API: nexray
+            try {
+                const r = await axios.get(
+                    `https://api.nexray.web.id/downloader/facebook?url=${encodeURIComponent(q)}`,
+                    { headers: { "User-Agent": "Mozilla/5.0" }, timeout: 20000 }
+                );
+                const d = r.data?.result;
+                if (d?.url) { videoUrl = d.url; title = d.title || title; thumbnail = d.thumbnail || null; }
+            } catch (_) {}
+
+            // Fallback: Koyoteh
+            if (!videoUrl) {
+                try {
+                    const r = await axios.get(
+                        `${KoyotehApi}/api/download/facebook?apikey=${GuruApiKey}&url=${encodeURIComponent(q)}`,
+                        { timeout: 15000 }
+                    );
+                    const d = r.data?.result;
+                    if (d?.hd_video || d?.sd_video) {
+                        videoUrl = d.hd_video || d.sd_video;
+                        title = d.title || title;
+                        thumbnail = d.thumbnail || null;
+                    }
+                } catch (_) {}
+            }
+
+            if (!videoUrl) {
+                await react("❌");
+                return reply(toxicBox("FACEBOOK DOWNLOADER", [
+                    "❌ Failed to download.",
+                    "Make sure the video is public.",
+                ], botFooter));
+            }
+
+            const fileSize = await getFileSize(videoUrl).catch(() => 0);
+            const msgOpts = { quoted: mek };
+
+            if (fileSize > MAX_MEDIA_SIZE) {
+                await Guru.sendMessage(from, {
+                    document: { url: videoUrl },
+                    fileName: `${title.replace(/[^\w\s.-]/gi, "")}.mp4`,
+                    mimetype: "video/mp4",
+                    caption: toxicBox("FACEBOOK DOWNLOADER", [
+                        `🎬 ${title}`,
+                    ], botFooter),
+                }, msgOpts);
+            } else {
+                await Guru.sendMessage(from, {
+                    video: { url: videoUrl },
+                    mimetype: "video/mp4",
+                    caption: toxicBox("FACEBOOK DOWNLOADER", [
+                        `🎬 ${title}`,
+                    ], botFooter),
+                }, msgOpts);
+            }
+            await react("✅");
+        } catch (err) {
+            console.error("Facebook error:", err);
+            await react("❌");
+            return reply(toxicBox("FACEBOOK DOWNLOADER", [`❌ Error: ${err.message}`], botFooter));
+        }
+    },
+);
+
+gmd(
+    {
+        pattern: "tiktok",
+        category: "downloader",
+        react: "🎵",
+        aliases: ["tiktokdl", "ttdl", "tt"],
+        description: "Download TikTok videos/audio. Usage: .tiktok <TikTok URL>",
+    },
+    async (from, Guru, conText) => {
+        const { q, mek, reply, react, botFooter, gmdBuffer, toAudio, formatAudio, KoyotehApi, GuruApiKey } = conText;
+
+        if (!q) {
+            await react("❌");
+            return reply(toxicBox("TIKTOK DOWNLOADER", [
+                "⚠️ Send a TikTok URL.",
+                "Example: .tiktok https://vm.tiktok.com/xxx",
+            ], botFooter));
+        }
+
+        if (!q.includes("tiktok.com")) {
+            await react("❌");
+            return reply(toxicBox("TIKTOK DOWNLOADER", ["❌ Invalid TikTok URL."], botFooter));
+        }
+
+        await react("⌛");
+        await reply(toxicBox("TIKTOK DOWNLOADER", ["⬇️ Fetching TikTok..."], botFooter));
+
+        try {
+            let result = null;
+
+            // Toxic-MD primary: nexray
+            try {
+                const r = await axios.get(
+                    `https://api.nexray.web.id/downloader/tiktok?url=${encodeURIComponent(q)}`,
+                    { headers: { "User-Agent": "Mozilla/5.0" }, timeout: 20000 }
+                );
+                const d = r.data?.result;
+                if (d?.video) result = { video: d.video, music: d.music, title: d.title || "TikTok Video", author: d.author?.nickname || "Unknown", cover: d.cover || null };
+            } catch (_) {}
 
             // Fallback: tikwm
-            if (!vid) {
+            if (!result) {
                 try {
-                    const res  = await axios.get(`https://www.tikwm.com/api/?url=${encodeURIComponent(url)}&hd=1`, { timeout: 15000, headers: { 'User-Agent': 'BlackPantherMD/2.0' } });
-                    vid        = res.data?.data?.play || res.data?.data?.wmplay;
-                    authorName = res.data?.data?.author?.nickname || 'Unknown';
-                    titleText  = (res.data?.data?.title || '').slice(0, 100);
-                } catch {}
+                    const r = await axios.get(`https://www.tikwm.com/api/?url=${encodeURIComponent(q)}`, { timeout: 15000 });
+                    if (r.data?.code === 0 && r.data?.data) {
+                        const d = r.data.data;
+                        result = { video: d.play || d.wmplay, music: d.music, title: d.title || "TikTok Video", author: d.author?.nickname || "Unknown", cover: d.cover || null };
+                    }
+                } catch (_) {}
             }
 
-            if (!vid) return ctx.sock.sendMessage(ctx.from, { text: '❌ Could not extract video. Try another link or use a direct TikTok URL.', contextInfo: channelCtx() }, { quoted: ctx.m });
-
-            await sendButtons(ctx.sock, ctx.from, {
-                title:  '🎵 TikTok Download',
-                text:   `👤 *Author:* ${authorName}\n` + (titleText ? `📝 *Caption:* ${titleText.slice(0, 120)}` : ''),
-                footer: config.BOT_NAME,
-                buttons: [
-                    { name: 'cta_url', buttonParamsJson: JSON.stringify({ display_text: '🔗 Open Source', url }) },
-                    { id: `${config.BOT_PREFIX}tiktok ${url}`, text: '⬇️ Download Again' },
-                ],
-            }, { quoted: ctx.m }).catch(() => {});
-            await ctx.send({ video: { url: vid }, caption: `🎵 *TikTok Download*\n👤 *Author:* ${authorName}\n_${config.BOT_NAME}_`, mimetype: 'video/mp4' });
-            await ctx.react('✅');
-        } catch (err) {
-            console.error('[TIKTOK]', err.message);
-            await ctx.react('❌');
-            await ctx.sock.sendMessage(ctx.from, { text: '❌ TikTok download failed. The link may have expired.', contextInfo: channelCtx() }, { quoted: ctx.m });
-        }
-    },
-});
-
-// ── Facebook ──────────────────────────────────────────────────
-addCmd({
-    name: 'facebook',
-    aliases: ['fb', 'fbdl'],
-    desc: 'Download Facebook video',
-    usage: 'facebook <url>',
-    category: 'downloader',
-    handler: async (ctx) => {
-        const url = ctx.text;
-        if (!url || (!url.includes('facebook') && !url.includes('fb.')))
-            return ctx.sock.sendMessage(ctx.from, { text: '❌ Provide a valid Facebook video URL.\n\nExample: `.facebook https://fb.watch/xxxxx`', contextInfo: channelCtx() }, { quoted: ctx.m });
-        await ctx.react('⏳');
-        try {
-            let vid = null;
-
-            // Primary: GuruTech API
-            try {
-                const data = await guruApi('facebook-dl', { url });
-                vid = data?.hd || data?.sd || data?.video || data?.data?.hd || data?.data?.sd;
-            } catch {}
-
-            // Fallback: lolhuman
-            if (!vid) {
-                try {
-                    const res = await axios.get(`https://api.lolhuman.xyz/api/fbdl?apikey=free&url=${encodeURIComponent(url)}`, { timeout: 15000 });
-                    vid = res.data?.result?.hd || res.data?.result?.sd;
-                } catch {}
-            }
-
-            if (!vid) return ctx.sock.sendMessage(ctx.from, { text: '❌ Could not download. Make sure the video is public.', contextInfo: channelCtx() }, { quoted: ctx.m });
-
-            await sendButtons(ctx.sock, ctx.from, {
-                title:  '📘 Facebook Download',
-                text:   `🔗 Source: ${url.slice(0, 80)}`,
-                footer: config.BOT_NAME,
-                buttons: [
-                    { name: 'cta_url', buttonParamsJson: JSON.stringify({ display_text: '🔗 Open Source', url }) },
-                    { id: `${config.BOT_PREFIX}facebook ${url}`, text: '⬇️ Download Again' },
-                ],
-            }, { quoted: ctx.m }).catch(() => {});
-            await ctx.send({ video: { url: vid }, caption: `📘 *Facebook Download*\n\n_${config.BOT_NAME}_`, mimetype: 'video/mp4' });
-            await ctx.react('✅');
-        } catch (err) {
-            console.error('[FACEBOOK]', err.message);
-            await ctx.react('❌');
-            await ctx.sock.sendMessage(ctx.from, { text: '❌ Facebook download failed. Make sure the post is public.', contextInfo: channelCtx() }, { quoted: ctx.m });
-        }
-    },
-});
-
-// ── Instagram ─────────────────────────────────────────────────
-addCmd({
-    name: 'instagram',
-    aliases: ['ig', 'igdl', 'insta'],
-    desc: 'Download Instagram photo/video/reel',
-    usage: 'instagram <url>',
-    category: 'downloader',
-    handler: async (ctx) => {
-        const url = ctx.text;
-        if (!url || !url.includes('instagram'))
-            return ctx.sock.sendMessage(ctx.from, { text: '❌ Provide a valid Instagram URL.\n\nExample: `.instagram https://www.instagram.com/p/xxxxx`', contextInfo: channelCtx() }, { quoted: ctx.m });
-        await ctx.react('⏳');
-        try {
-            let mediaUrl = null, mediaType = 'video';
-
-            // Primary: GuruTech API
-            try {
-                const data = await guruApi('instagram-dl', { url });
-                const items = data?.medias || data?.data || (data?.url ? [data] : null);
-                if (items && items.length > 0) {
-                    mediaUrl  = items[0]?.url || items[0]?.src;
-                    mediaType = items[0]?.type === 'image' ? 'image' : 'video';
+            // Fallback: Koyoteh
+            if (!result) {
+                for (const ep of ["tiktok", "tiktokdlv2", "tiktokdlv3"]) {
+                    try {
+                        const r = await axios.get(`${KoyotehApi}/api/download/${ep}?apikey=${GuruApiKey}&url=${encodeURIComponent(q)}`, { timeout: 15000 });
+                        if (r.data?.success && r.data?.result) { result = r.data.result; break; }
+                    } catch (_) {}
                 }
-            } catch {}
+            }
 
-            // Fallback: lolhuman
+            if (!result?.video) {
+                await react("❌");
+                return reply(toxicBox("TIKTOK DOWNLOADER", ["❌ Failed to download. Try again."], botFooter));
+            }
+
+            const { video, music, title, author, cover } = result;
+
+            // Send video
+            const fileSize = await getFileSize(video).catch(() => 0);
+            await Guru.sendMessage(from, {
+                ...(fileSize > MAX_MEDIA_SIZE
+                    ? { document: { url: video }, fileName: `${(title).replace(/[^\w\s.-]/gi, "")}.mp4`, mimetype: "video/mp4" }
+                    : { video: { url: video }, mimetype: "video/mp4" }),
+                caption: toxicBox("TIKTOK DOWNLOADER", [
+                    `🎵 ${title}`,
+                    `👤 @${author}`,
+                ], botFooter),
+            }, { quoted: mek });
+
+            // Send music as audio too
+            if (music) {
+                try {
+                    await Guru.sendMessage(from, {
+                        audio: { url: music },
+                        mimetype: "audio/mpeg",
+                        ptt: false,
+                        fileName: `${(title).replace(/[^\w\s.-]/gi, "")}_music.mp3`,
+                    }, { quoted: mek });
+                } catch (_) {}
+            }
+
+            await react("✅");
+        } catch (err) {
+            console.error("TikTok error:", err);
+            await react("❌");
+            return reply(toxicBox("TIKTOK DOWNLOADER", [`❌ Error: ${err.message}`], botFooter));
+        }
+    },
+);
+
+gmd(
+    {
+        pattern: "twitter",
+        category: "downloader",
+        react: "🐦",
+        aliases: ["twitterdl", "xdl", "xdownloader", "twitterdownloader", "x"],
+        description: "Download Twitter/X videos. Usage: .twitter <tweet URL>",
+    },
+    async (from, Guru, conText) => {
+        const { q, mek, reply, react, botFooter, KoyotehApi, GuruApiKey } = conText;
+
+        if (!q) {
+            await react("❌");
+            return reply(toxicBox("TWITTER/X DOWNLOADER", [
+                "⚠️ Send a Twitter/X URL.",
+                "Example: .twitter https://x.com/user/status/xxx",
+            ], botFooter));
+        }
+
+        if (!q.includes("twitter.com") && !q.includes("x.com")) {
+            await react("❌");
+            return reply(toxicBox("TWITTER/X DOWNLOADER", ["❌ Invalid Twitter/X URL."], botFooter));
+        }
+
+        await react("⌛");
+        await reply(toxicBox("TWITTER/X DOWNLOADER", ["⬇️ Fetching tweet video..."], botFooter));
+
+        try {
+            let videoUrl = null;
+
+            // Toxic-MD API: nexray
+            try {
+                const r = await axios.get(
+                    `https://api.nexray.web.id/downloader/twitter?url=${encodeURIComponent(q)}`,
+                    { headers: { "User-Agent": "Mozilla/5.0" }, timeout: 20000 }
+                );
+                const d = r.data?.result;
+                const urls = d?.videoUrls || d?.urls || (d?.url ? [{ url: d.url }] : null);
+                if (urls?.length) videoUrl = urls[0].url;
+            } catch (_) {}
+
+            // Fallback: Koyoteh
+            if (!videoUrl) {
+                try {
+                    const r = await axios.get(
+                        `${KoyotehApi}/api/download/twitter?apikey=${GuruApiKey}&url=${encodeURIComponent(q)}`,
+                        { timeout: 15000 }
+                    );
+                    const d = r.data?.result;
+                    if (d?.videoUrls?.length) videoUrl = d.videoUrls[0].url;
+                } catch (_) {}
+            }
+
+            if (!videoUrl) {
+                await react("❌");
+                return reply(toxicBox("TWITTER/X DOWNLOADER", [
+                    "❌ No video found.",
+                    "Make sure the tweet has a video and is public.",
+                ], botFooter));
+            }
+
+            const fileSize = await getFileSize(videoUrl).catch(() => 0);
+            await Guru.sendMessage(from, {
+                ...(fileSize > MAX_MEDIA_SIZE
+                    ? { document: { url: videoUrl }, fileName: "twitter_video.mp4", mimetype: "video/mp4" }
+                    : { video: { url: videoUrl }, mimetype: "video/mp4" }),
+                caption: toxicBox("TWITTER/X DOWNLOADER", ["🐦 Here's your video!"], botFooter),
+            }, { quoted: mek });
+
+            await react("✅");
+        } catch (err) {
+            console.error("Twitter error:", err);
+            await react("❌");
+            return reply(toxicBox("TWITTER/X DOWNLOADER", [`❌ Error: ${err.message}`], botFooter));
+        }
+    },
+);
+
+gmd(
+    {
+        pattern: "ig",
+        category: "downloader",
+        react: "📸",
+        aliases: ["insta", "instadl", "igdl", "instagram"],
+        description: "Download Instagram reels/videos/images. Usage: .ig <Instagram URL>",
+    },
+    async (from, Guru, conText) => {
+        const { q, mek, reply, react, botFooter, KoyotehApi, GuruApiKey } = conText;
+
+        if (!q) {
+            await react("❌");
+            return reply(toxicBox("INSTAGRAM DOWNLOADER", [
+                "⚠️ Send an Instagram URL.",
+                "Example: .ig https://www.instagram.com/reel/xxx",
+            ], botFooter));
+        }
+
+        if (!q.includes("instagram.com")) {
+            await react("❌");
+            return reply(toxicBox("INSTAGRAM DOWNLOADER", ["❌ Invalid Instagram URL."], botFooter));
+        }
+
+        await react("⌛");
+        await reply(toxicBox("INSTAGRAM DOWNLOADER", ["⬇️ Fetching Instagram..."], botFooter));
+
+        try {
+            let mediaUrl = null, isVideo = true, caption = "";
+
+            // Toxic-MD primary: nexray v2
+            try {
+                const r = await axios.get(
+                    `https://api.nexray.web.id/downloader/v2/instagram?url=${encodeURIComponent(q)}`,
+                    { headers: { "User-Agent": "Mozilla/5.0" }, timeout: 20000 }
+                );
+                const d = r.data?.result;
+                if (Array.isArray(d) && d.length) {
+                    mediaUrl = d[0]?.url || d[0]?.video || d[0]?.image;
+                    isVideo = !!(d[0]?.video || d[0]?.type === "video");
+                } else if (d?.url) {
+                    mediaUrl = d.url;
+                    isVideo = d.type === "video";
+                    caption = d.caption || "";
+                }
+            } catch (_) {}
+
+            // Fallback: nexray v1
             if (!mediaUrl) {
                 try {
-                    const res = await axios.get(`https://api.lolhuman.xyz/api/igdl?apikey=free&url=${encodeURIComponent(url)}`, { timeout: 15000 });
-                    const item = res.data?.result?.[0];
-                    if (item) { mediaUrl = item.url; mediaType = item.type || 'video'; }
-                } catch {}
+                    const r = await axios.get(
+                        `https://api.nexray.web.id/downloader/instagram?url=${encodeURIComponent(q)}`,
+                        { headers: { "User-Agent": "Mozilla/5.0" }, timeout: 20000 }
+                    );
+                    const d = r.data?.result;
+                    if (d?.url) { mediaUrl = d.url; isVideo = d.type !== "image"; caption = d.caption || ""; }
+                } catch (_) {}
             }
 
-            if (!mediaUrl) return ctx.sock.sendMessage(ctx.from, { text: '❌ Could not download. The post must be public.', contextInfo: channelCtx() }, { quoted: ctx.m });
-
-            await sendButtons(ctx.sock, ctx.from, {
-                title:  '📸 Instagram Download',
-                text:   `🔗 Source: ${url.slice(0, 80)}`,
-                footer: config.BOT_NAME,
-                buttons: [
-                    { name: 'cta_url', buttonParamsJson: JSON.stringify({ display_text: '🔗 Open Source', url }) },
-                    { id: `${config.BOT_PREFIX}instagram ${url}`, text: '⬇️ Download Again' },
-                ],
-            }, { quoted: ctx.m }).catch(() => {});
-            if (mediaType === 'image') {
-                await ctx.send({ image: { url: mediaUrl }, caption: `📷 *Instagram Download*\n\n_${config.BOT_NAME}_` });
-            } else {
-                await ctx.send({ video: { url: mediaUrl }, caption: `📸 *Instagram Download*\n\n_${config.BOT_NAME}_`, mimetype: 'video/mp4' });
-            }
-            await ctx.react('✅');
-        } catch (err) {
-            console.error('[INSTAGRAM]', err.message);
-            await ctx.react('❌');
-            await ctx.reply('❌ Instagram download failed. Make sure it\'s a public post.');
-        }
-    },
-});
-
-// ── Twitter / X ───────────────────────────────────────────────
-addCmd({
-    name: 'twitter',
-    aliases: ['twdl', 'xdl', 'x'],
-    desc: 'Download Twitter/X video',
-    usage: 'twitter <url>',
-    category: 'downloader',
-    handler: async (ctx) => {
-        const url = ctx.text;
-        if (!url || (!url.includes('twitter') && !url.includes('x.com')))
-            return ctx.sock.sendMessage(ctx.from, { text: '❌ Provide a valid Twitter/X URL.\n\nExample: `.twitter https://x.com/user/status/xxxxx`', contextInfo: channelCtx() }, { quoted: ctx.m });
-        await ctx.react('⏳');
-        try {
-            let vid = null;
-
-            // Primary: GuruTech API
-            try {
-                const data = await guruApi('twitter-dl', { url });
-                vid = data?.hd || data?.sd || data?.video || data?.data?.hd || data?.data?.sd;
-            } catch {}
-
-            // Fallback: lolhuman
-            if (!vid) {
+            // Fallback: Koyoteh
+            if (!mediaUrl) {
                 try {
-                    const res = await axios.get(`https://api.lolhuman.xyz/api/twitterdl?apikey=free&url=${encodeURIComponent(url)}`, { timeout: 15000 });
-                    vid = res.data?.result?.hd || res.data?.result?.sd;
-                } catch {}
+                    const r = await axios.get(
+                        `${KoyotehApi}/api/download/instadl?apikey=${GuruApiKey}&url=${encodeURIComponent(q)}`,
+                        { timeout: 15000 }
+                    );
+                    const d = r.data?.result;
+                    if (d?.download_url) { mediaUrl = d.download_url; isVideo = true; }
+                } catch (_) {}
             }
 
-            if (!vid) return ctx.reply('❌ Could not extract video. Make sure it\'s a public tweet with video.');
+            if (!mediaUrl) {
+                await react("❌");
+                return reply(toxicBox("INSTAGRAM DOWNLOADER", [
+                    "❌ Failed to download.",
+                    "Make sure the post is public.",
+                ], botFooter));
+            }
 
-            await sendButtons(ctx.sock, ctx.from, {
-                title:  '🐦 Twitter/X Download',
-                text:   `🔗 Source: ${url.slice(0, 80)}`,
-                footer: config.BOT_NAME,
-                buttons: [
-                    { name: 'cta_url', buttonParamsJson: JSON.stringify({ display_text: '🔗 Open Tweet', url }) },
-                    { id: `${config.BOT_PREFIX}twitter ${url}`, text: '⬇️ Download Again' },
-                ],
-            }, { quoted: ctx.m }).catch(() => {});
-            await ctx.send({ video: { url: vid }, caption: `🐦 *Twitter Download*\n\n_${config.BOT_NAME}_`, mimetype: 'video/mp4' });
-            await ctx.react('✅');
-        } catch (err) {
-            console.error('[TWITTER]', err.message);
-            await ctx.react('❌');
-            await ctx.sock.sendMessage(ctx.from, { text: '❌ Twitter download failed.', contextInfo: channelCtx() }, { quoted: ctx.m });
-        }
-    },
-});
+            const boxCaption = toxicBox("INSTAGRAM DOWNLOADER", [
+                caption ? `📝 ${caption.substring(0, 80)}${caption.length > 80 ? "..." : ""}` : "📸 Instagram Media",
+            ], botFooter);
 
-// ── Snapchat ──────────────────────────────────────────────────
-addCmd({
-    name: 'snapchat',
-    aliases: ['snap', 'snapdl'],
-    desc: 'Download Snapchat video/story',
-    usage: 'snapchat <url>',
-    category: 'downloader',
-    handler: async (ctx) => {
-        const url = ctx.text;
-        if (!url || !url.includes('snapchat'))
-            return ctx.reply('❌ Provide a valid Snapchat URL.\n\nExample: `.snapchat https://www.snapchat.com/...`');
-        await ctx.react('⏳');
-        try {
-            const data = await guruApi('snapchat-dl', { url });
-            const vid  = data?.video || data?.url || data?.data?.video;
-            if (!vid) return ctx.reply('❌ Could not download. Make sure it\'s a public Snapchat link.');
-            await ctx.send({ video: { url: vid }, caption: `👻 *Snapchat Download*\n\n_${config.BOT_NAME}_`, mimetype: 'video/mp4' });
-            await ctx.react('✅');
-        } catch (err) {
-            console.error('[SNAPCHAT]', err.message);
-            await ctx.react('❌');
-            await ctx.reply('❌ Snapchat download failed.');
-        }
-    },
-});
+            const fileSize = await getFileSize(mediaUrl).catch(() => 0);
 
-// ── Pinterest ─────────────────────────────────────────────────
-addCmd({
-    name: 'pinterest',
-    aliases: ['pin', 'pindl'],
-    desc: 'Download Pinterest video/image',
-    usage: 'pinterest <url>',
-    category: 'downloader',
-    handler: async (ctx) => {
-        const url = ctx.text;
-        if (!url || !url.includes('pin'))
-            return ctx.reply('❌ Provide a valid Pinterest URL.\n\nExample: `.pinterest https://pin.it/xxxxx`');
-        await ctx.react('⏳');
-        try {
-            const data = await guruApi('pinterest-dl', { url });
-            const vid  = data?.video || data?.url || data?.data?.video;
-            const img  = data?.image || data?.data?.image;
-            if (!vid && !img) return ctx.reply('❌ Could not download. Make sure it\'s a public Pinterest pin.');
-            if (vid) {
-                await ctx.send({ video: { url: vid }, caption: `📌 *Pinterest Download*\n\n_${config.BOT_NAME}_`, mimetype: 'video/mp4' });
+            if (isVideo) {
+                await Guru.sendMessage(from, {
+                    ...(fileSize > MAX_MEDIA_SIZE
+                        ? { document: { url: mediaUrl }, fileName: "instagram_video.mp4", mimetype: "video/mp4" }
+                        : { video: { url: mediaUrl }, mimetype: "video/mp4" }),
+                    caption: boxCaption,
+                }, { quoted: mek });
             } else {
-                await ctx.send({ image: { url: img }, caption: `📌 *Pinterest Download*\n\n_${config.BOT_NAME}_` });
+                await Guru.sendMessage(from, {
+                    image: { url: mediaUrl },
+                    caption: boxCaption,
+                }, { quoted: mek });
             }
-            await ctx.react('✅');
+
+            await react("✅");
         } catch (err) {
-            console.error('[PINTEREST]', err.message);
-            await ctx.react('❌');
-            await ctx.reply('❌ Pinterest download failed.');
+            console.error("Instagram error:", err);
+            await react("❌");
+            return reply(toxicBox("INSTAGRAM DOWNLOADER", [`❌ Error: ${err.message}`], botFooter));
         }
     },
-});
+);
 
-// ── Threads ───────────────────────────────────────────────────
-addCmd({
-    name: 'threads',
-    aliases: ['threadsdl'],
-    desc: 'Download Threads video/image',
-    usage: 'threads <url>',
-    category: 'downloader',
-    handler: async (ctx) => {
-        const url = ctx.text;
-        if (!url || !url.includes('threads'))
-            return ctx.reply('❌ Provide a valid Threads URL.\n\nExample: `.threads https://www.threads.net/...`');
-        await ctx.react('⏳');
+gmd(
+    {
+        pattern: "snack",
+        category: "downloader",
+        react: "🍿",
+        aliases: ["snackdl", "snackvideo"],
+        description: "Download Snack Video. Usage: .snack <Snack Video URL>",
+    },
+    async (from, Guru, conText) => {
+        const { q, mek, reply, react, botFooter, KoyotehApi, GuruApiKey } = conText;
+
+        if (!q) {
+            await react("❌");
+            return reply(toxicBox("SNACK VIDEO", [
+                "⚠️ Send a Snack Video URL.",
+                "Example: .snack https://snackvideo.com/video/xxx",
+            ], botFooter));
+        }
+
+        if (!q.includes("snackvideo.com")) {
+            await react("❌");
+            return reply(toxicBox("SNACK VIDEO", ["❌ Invalid Snack Video URL."], botFooter));
+        }
+
+        await react("⌛");
+        await reply(toxicBox("SNACK VIDEO", ["⬇️ Downloading Snack Video..."], botFooter));
+
         try {
-            const data = await guruApi('threads-dl', { url });
-            const vid  = data?.video || data?.url || data?.data?.video;
-            const img  = data?.image || data?.data?.image;
-            if (!vid && !img) return ctx.reply('❌ Could not download. Make sure it\'s a public Threads post.');
-            if (vid) {
-                await ctx.send({ video: { url: vid }, caption: `🧵 *Threads Download*\n\n_${config.BOT_NAME}_`, mimetype: 'video/mp4' });
-            } else {
-                await ctx.send({ image: { url: img }, caption: `🧵 *Threads Download*\n\n_${config.BOT_NAME}_` });
+            const r = await axios.get(
+                `${KoyotehApi}/api/download/snackdl?apikey=${GuruApiKey}&url=${encodeURIComponent(q)}`,
+                { timeout: 60000 }
+            );
+
+            if (!r.data?.success || !r.data?.result?.media) {
+                await react("❌");
+                return reply(toxicBox("SNACK VIDEO", ["❌ Failed to fetch. Check URL and try again."], botFooter));
             }
-            await ctx.react('✅');
-        } catch (err) {
-            console.error('[THREADS]', err.message);
-            await ctx.react('❌');
-            await ctx.reply('❌ Threads download failed.');
-        }
-    },
-});
 
-// ── Mediafire ─────────────────────────────────────────────────
-addCmd({
-    name: 'mediafire',
-    aliases: ['mf', 'mfdl'],
-    desc: 'Download file from Mediafire',
-    usage: 'mediafire <url>',
-    category: 'downloader',
-    handler: async (ctx) => {
-        const url = ctx.text;
-        if (!url || !url.includes('mediafire'))
-            return ctx.reply('❌ Provide a valid Mediafire URL.\n\nExample: `.mediafire https://www.mediafire.com/file/...`');
-        await ctx.react('⏳');
-        try {
-            const data     = await guruApi('mediafire-dl', { url });
-            const fileUrl  = data?.download || data?.url || data?.data?.download;
-            const fileName = data?.filename || data?.name || 'file';
-            const fileSize = data?.size || data?.data?.size || '';
-            if (!fileUrl) return ctx.reply('❌ Could not get download link. Make sure it\'s a valid public Mediafire file.');
-            await sendButtons(ctx.sock, ctx.from, {
-                title:  '🗄️ Mediafire Download',
-                text:   `📁 *File:* ${fileName}\n💾 *Size:* ${fileSize}`,
-                footer: config.BOT_NAME,
-                buttons: [
-                    { name: 'cta_url', buttonParamsJson: JSON.stringify({ display_text: '⬇️ Download File', url: fileUrl }) },
-                    { name: 'cta_url', buttonParamsJson: JSON.stringify({ display_text: '🔗 Source', url }) },
-                ],
-            }, { quoted: ctx.m }).catch(() => ctx.reply(`📁 *${fileName}*\n💾 ${fileSize}\n\n🔗 ${fileUrl}`));
-            await ctx.react('✅');
+            const { title, media, author, like } = r.data.result;
+
+            const fileSize = await getFileSize(media).catch(() => 0);
+            await Guru.sendMessage(from, {
+                ...(fileSize > MAX_MEDIA_SIZE
+                    ? { document: { url: media }, fileName: `${(title || "snack_video").replace(/[^\w\s.-]/gi, "")}.mp4`, mimetype: "video/mp4" }
+                    : { video: { url: media }, mimetype: "video/mp4" }),
+                caption: toxicBox("SNACK VIDEO", [
+                    `🎬 ${title || "Snack Video"}`,
+                    `👤 ${author || "Unknown"}`,
+                    like ? `❤️ ${like} likes` : null,
+                ], botFooter),
+            }, { quoted: mek });
+
+            await react("✅");
         } catch (err) {
-            console.error('[MEDIAFIRE]', err.message);
-            await ctx.react('❌');
-            await ctx.reply('❌ Mediafire download failed.');
+            console.error("Snack Video error:", err);
+            await react("❌");
+            return reply(toxicBox("SNACK VIDEO", [`❌ Error: ${err.message}`], botFooter));
         }
     },
-});
+);
