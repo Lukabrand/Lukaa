@@ -1,21 +1,17 @@
 'use strict';
-// ╔══════════════════════════════════════════════════════════════╗
-//  🐾  BLACK PANTHER MD  —  play.js
-//  🎵  .play · .ytmp3 · .ytmp4 · .ytsearch · .spotify · .tts · .shorten
-// ╚══════════════════════════════════════════════════════════════╝
 
-const { addCmd } = require('../../guru/handlers/loader');
+const { addCmd } = require('../../luka/handlers/loader');
 const axios      = require('axios');
 const yts        = require('yt-search');
-const config     = require('../../guru/config/settings');
-const { channelCtx } = require('../../guru/utils/gmdFunctions2');
-const { sendButtons } = require('../../guru/utils/gmdFunctions2');
+const config     = require('../../luka/config/settings');
+const { channelCtx } = require('../../luka/utils/gmdFunctions2');
+const { sendButtons } = require('../../luka/utils/gmdFunctions2');
 
 // ── HTTP helper ────────────────────────────────────────────────
 async function getJson(url, opts = {}) {
     const res = await axios.get(url, {
         timeout: 30000,
-        headers: { 'User-Agent': 'Mozilla/5.0 (BlackPantherMD/2.0)' },
+        headers: { 'User-Agent': 'Mozilla/5.0 (LukaXMD/2.0)' },
         ...opts,
     });
     return res.data;
