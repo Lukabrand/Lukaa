@@ -10,7 +10,7 @@ const { sendButtons } = require('../../luka/utils/gmdFunctions2');
 async function fetchJson(url) {
     const res = await axios.get(url, {
         timeout: 15000,
-        headers: { 'User-Agent': 'LukaXMD/1.0' },
+        headers: { 'User-Agent': 'LukaXMD/2.0' },
     });
     return res.data;
 }
