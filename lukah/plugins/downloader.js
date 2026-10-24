@@ -5,16 +5,16 @@
 //  (YouTube downloads moved to play.js)
 // ╚══════════════════════════════════════════════════════════════╝
 
-const { addCmd } = require('../../guru/handlers/loader');
+const { addCmd } = require('../../luka/handlers/loader');
 const axios      = require('axios');
-const config     = require('../../guru/config/settings');
-const { channelCtx } = require('../../guru/utils/gmdFunctions2');
-const { sendButtons } = require('../../guru/utils/gmdFunctions2');
+const config     = require('../../luka/config/settings');
+const { channelCtx } = require('../../luka/utils/gmdFunctions2');
+const { sendButtons } = require('../../luka/utils/gmdFunctions2');
 
 async function fetchJson(url) {
     const res = await axios.get(url, {
         timeout: 15000,
-        headers: { 'User-Agent': 'BlackPantherMD/1.0' },
+        headers: { 'User-Agent': 'LukaXMD/1.0' },
     });
     return res.data;
 }
