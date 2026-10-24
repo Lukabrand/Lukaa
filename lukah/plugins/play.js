@@ -139,52 +139,56 @@ async function searchYouTube(query) {
 
             const result = data?.result;
 
-            const items = result
-                ? [{
-                    title: result.title,
-                    url: result.videoUrl,
-                    thumbnail: result.thumbnail,
-                    duration: result.duration
-                }]
-                : [];
+            const videoUrl =
+                result?.videoUrl ||
+                result?.url ||
+                result?.link;
 
-            if (!data?.status || !items[0]?.url) {
-                throw new Error('Search provider returned no results');
+            if (data?.status && videoUrl) {
+                return [{
+                    title: result.title || query,
+                    url: videoUrl,
+                    thumbnail: result.thumbnail || '',
+                    duration: result.duration || ''
+                }];
             }
 
-            return items;
+            throw new Error('No valid search result');
         },
 
         async () => {
-            const searchUrl =
-                `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
-
             const data = await getJson(
-                `https://api.nexray.web.id/downloader/ytmp3?url=${encodeURIComponent(searchUrl)}`
+                `https://api.nexray.web.id/downloader/ytmp3?url=${encodeURIComponent(
+                    `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`
+                )}`
             );
 
-            const result = getArray(data);
+            const items = getArray(data);
 
-            if (result.length) {
-                return result;
-            }
+            const results = items
+                .map(item => ({
+                    title: item.title || item.name || '',
+                    url: item.url || item.videoUrl || item.link || '',
+                    thumbnail: item.thumbnail || '',
+                    duration: item.duration || item.timestamp || ''
+                }))
+                .filter(item =>
+                    item.title &&
+                    /^https?:\/\/(?:www\.)?(?:youtube\.com|youtu\.be)\//i.test(item.url)
+                );
 
-            throw new Error('No search results');
+            if (results.length) return results;
+
+            throw new Error('No valid results from Nexray');
         }
     ];
 
     for (const endpoint of endpoints) {
         try {
-            const result = await endpoint();
-
-            if (result.length) {
-                return result;
-            }
+            const results = await endpoint();
+            if (results.length) return results;
         } catch (error) {
-            console.error(
-                '[YT SEARCH PROVIDER]',
-                error.response?.status || error.message
-            );
+            console.error('[YT SEARCH]', error.message);
         }
     }
 
