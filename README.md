@@ -9,7 +9,7 @@
 
 <h1 align="center"> LUKA-XMD </h1>
 
-[![GitHub forks](https://img.shields.io/github/forks/lucvoice/LUKA-XMD?style=social)](https://github.com/lukabrand/LUKA-XMD/fork)
+[![GitHub forks](https://img.shields.io/github/forks/lukabrand/LUKA-XMD?style=social)](https://github.com/lukabrand/LUKA-XMD/fork)
 [![GitHub stars](https://img.shields.io/github/stars/lukabrand/LUKA-XMD?style=social)](https://github.com/lukabrand/LUKA-XMD/stargazers)
 [![GitHub followers](https://img.shields.io/github/followers/lukabrand?style=social)](https://github.com/lukabrand?tab=followers)
 [![GitHub watchers](https://img.shields.io/github/watchers/lukabrand/LUKA-XMD?style=social)](https://github.com/lukabrand/LUKA-XMD/watchers)
