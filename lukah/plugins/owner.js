@@ -581,3 +581,445 @@ addCmd({
         await ctx.react('👑');
     },
 });
+
+// ═══════════════════════════════════════════════════════════════
+//  ANTI-DELETE — FIVE COMMANDS
+//  Modes: INCHAT / INDM / OFF
+// ═══════════════════════════════════════════════════════════════
+
+const ANTIDELETE_KEY = 'ANTIDELETE';
+
+function getAntiDeleteMode() {
+    const value = getSetting(ANTIDELETE_KEY, 'false');
+    return String(value).toLowerCase();
+}
+
+function setAntiDeleteMode(mode) {
+    setSetting(ANTIDELETE_KEY, mode);
+    config.ANTIDELETE = mode;
+}
+
+// ── 1. ANTIDELETE ON ───────────────────────────────────────────
+
+addCmd({
+    name: 'antideleteon',
+    aliases: ['adon'],
+    desc: 'Enable Anti-Delete in DM mode',
+    category: 'owner',
+    ownerOnly: true,
+
+    handler: async (ctx) => {
+        try {
+            setAntiDeleteMode('indm');
+
+            await ctx.reply(
+                `✅ *ANTI-DELETE ENABLED*\n\n` +
+                `📥 Mode: *INDM*\n` +
+                `Deleted messages will be sent to the owner's inbox ` +
+                `when the deletion listener is connected.\n\n` +
+                `ᴘᴏᴡᴇʀᴇᴅ ʙʏ ʟᴜᴋᴀʙʀᴀɴᴅ`
+            );
+        } catch (error) {
+            await ctx.reply(`❌ Error: ${error.message}`);
+        }
+    },
+});
+
+// ── 2. ANTIDELETE OFF ──────────────────────────────────────────
+
+addCmd({
+    name: 'antideleteoff',
+    aliases: ['adoff'],
+    desc: 'Disable Anti-Delete',
+    category: 'owner',
+    ownerOnly: true,
+
+    handler: async (ctx) => {
+        try {
+            setAntiDeleteMode('false');
+
+            await ctx.reply(
+                `🔕 *ANTI-DELETE DISABLED*\n\n` +
+                `Anti-Delete has been turned off.\n\n` +
+                `ᴘᴏᴡᴇʀᴇᴅ ʙʏ ʟᴜᴋᴀʙʀᴀɴᴅ`
+            );
+        } catch (error) {
+            await ctx.reply(`❌ Error: ${error.message}`);
+        }
+    },
+});
+
+// ── 3. ANTIDELETE INCHAT ───────────────────────────────────────
+
+addCmd({
+    name: 'antideletechat',
+    aliases: ['adchat'],
+    desc: 'Send deleted-message alerts to the original chat',
+    category: 'owner',
+    ownerOnly: true,
+
+    handler: async (ctx) => {
+        try {
+            setAntiDeleteMode('inchat');
+
+            await ctx.reply(
+                `✅ *ANTI-DELETE INCHAT ENABLED*\n\n` +
+                `Deleted-message alerts will go to the original chat ` +
+                `when the deletion listener is connected.\n\n` +
+                `ᴘᴏᴡᴇʀᴇᴅ ʙʏ ʟᴜᴋᴀʙʀᴀɴᴅ`
+            );
+        } catch (error) {
+            await ctx.reply(`❌ Error: ${error.message}`);
+        }
+    },
+});
+
+// ── 4. ANTIDELETE INDM ─────────────────────────────────────────
+
+addCmd({
+    name: 'antideletedm',
+    aliases: ['addm', 'antideleteinbox'],
+    desc: 'Send deleted-message alerts to the owner inbox',
+    category: 'owner',
+    ownerOnly: true,
+
+    handler: async (ctx) => {
+        try {
+            setAntiDeleteMode('indm');
+
+            await ctx.reply(
+                `📥 *ANTI-DELETE INDM ENABLED*\n\n` +
+                `Deleted-message alerts are configured to go to the ` +
+                `owner's WhatsApp inbox.\n\n` +
+                `ᴘᴏᴡᴇʀᴇᴅ ʙʏ ʟᴜᴋᴀʙʀᴀɴᴅ`
+            );
+        } catch (error) {
+            await ctx.reply(`❌ Error: ${error.message}`);
+        }
+    },
+});
+
+// ── 5. ANTIDELETE STATUS ───────────────────────────────────────
+
+addCmd({
+    name: 'antideletestatus',
+    aliases: ['adstatus'],
+    desc: 'Check Anti-Delete mode',
+    category: 'owner',
+    ownerOnly: true,
+
+    handler: async (ctx) => {
+        try {
+            const mode = getAntiDeleteMode();
+            const enabled = !['false', 'off', '0'].includes(mode);
+
+            await ctx.reply(
+                `╭══〘〘 🛡️ *ANTI-DELETE STATUS* 〙〙═⊷\n` +
+                `┃\n` +
+                `┃ Status: *${enabled ? 'ON ✅' : 'OFF ❌'}*\n` +
+                `┃ Mode: *${mode.toUpperCase()}*\n` +
+                `┃\n` +
+                `╰══⊷ ᴘᴏᴡᴇʀᴇᴅ ʙʏ ʟᴜᴋᴀʙʀᴀɴᴅ`
+            );
+        } catch (error) {
+            await ctx.reply(`❌ Error: ${error.message}`);
+        }
+    },
+});
+
+// ── Auto-React Status ────────────────────────────────────────
+addCmd({
+    name: 'autoreactstatus',
+    aliases: ['reactstatus', 'statusreact', 'sr'],
+    desc: 'Toggle automatic reactions to WhatsApp statuses',
+    category: 'owner',
+    ownerOnly: true,
+    handler: async (ctx) => {
+        const arg = ctx.args[0]?.toLowerCase();
+        const current = getSetting('AUTO_LIKE_STATUS', 'false') === 'true';
+
+        if (!['on', 'off'].includes(arg)) {
+            return ctx.reply(
+                `📝 *AUTO-REACT STATUS*\n\n` +
+                `Use:\n` +
+                `• .autoreactstatus on\n` +
+                `• .autoreactstatus off\n\n` +
+                `Current status: *${current ? 'ON ✅' : 'OFF ❌'}*\n\n` +
+                `ᴘᴏᴡᴇʀᴇᴅ ʙʏ ʟᴜᴋᴀʙʀᴀɴᴅ`
+            );
+        }
+
+        const enabled = arg === 'on';
+        setSetting('AUTO_LIKE_STATUS', String(enabled));
+        config.AUTO_LIKE_STATUS = enabled;
+
+        await ctx.reply(
+            enabled
+                ? `✅ *AUTO-REACT STATUS ON*\n\nI will automatically react to WhatsApp statuses.\n\nᴘᴏᴡᴇʀᴇᴅ ʙʏ ʟᴜᴋᴀʙʀᴀɴᴅ`
+                : `🔕 *AUTO-REACT STATUS OFF*\n\nAutomatic status reactions have been disabled.\n\nᴘᴏᴡᴇʀᴇᴅ ʙʏ ʟᴜᴋᴀʙʀᴀɴᴅ`
+        );
+    }
+});
+
+// ── Auto-React ───────────────────────────────────────────────
+addCmd({
+    name: 'autoreact',
+    aliases: ['togglereact'],
+    desc: 'Enable or disable auto-reactions to incoming messages',
+    category: 'owner',
+    ownerOnly: true,
+    handler: async (ctx) => {
+        const arg = ctx.args[0]?.toLowerCase();
+        const current = getSetting('AUTO_REACT', 'false') === 'true';
+
+        if (!['on', 'off'].includes(arg)) {
+            return ctx.reply(
+                `📝 *AUTO-REACT SETTINGS*\n\n` +
+                `• .autoreact on\n` +
+                `• .autoreact off\n\n` +
+                `Current status: *${current ? 'ON ✅' : 'OFF ❌'}*\n\n` +
+                `ᴘᴏᴡᴇʀᴇᴅ ʙʏ ʟᴜᴋᴀʙʀᴀɴᴅ`
+            );
+        }
+
+        const enabled = arg === 'on';
+        setSetting('AUTO_REACT', String(enabled));
+        config.AUTO_REACT = enabled;
+
+        await ctx.reply(
+            enabled
+                ? `✅ *AUTO-REACT ON*\n\nI will react to incoming messages automatically.\n\nᴘᴏᴡᴇʀᴇᴅ ʙʏ ʟᴜᴋᴀʙʀᴀɴᴅ`
+                : `🔕 *AUTO-REACT OFF*\n\nAutomatic reactions to incoming messages have been disabled.\n\nᴘᴏᴡᴇʀᴇᴅ ʙʏ ʟᴜᴋᴀʙʀᴀɴᴅ`
+        );
+    }
+});
+
+// GET PROFILE PICTURE
+addCmd({
+    name: 'getpp',
+    aliases: [],
+    desc: 'Get profile picture',
+    category: 'owner',
+    ownerOnly: true,
+    async handler(ctx) {
+        try {
+            const sock = ctx.sock;
+            const jid = ctx.quoted?.sender || ctx.m?.message?.extendedTextMessage?.contextInfo?.mentionedJid?.[0] || ctx.sender;
+            const url = await sock.profilePictureUrl(jid, 'image');
+            await ctx.send({ image: { url }, caption: `Profile Picture\nJID: ${jid}` });
+        } catch {
+            return ctx.reply('❌ Profile picture not available.');
+        }
+    }
+});
+
+// GET GROUP PROFILE PICTURE
+addCmd({
+    name: 'getgcpp',
+    aliases: [],
+    desc: 'Get group profile picture',
+    category: 'owner',
+    ownerOnly: true,
+    groupOnly: true,
+    async handler(ctx) {
+        try {
+            const url = await ctx.sock.profilePictureUrl(ctx.from, 'image');
+            await ctx.send({ image: { url }, caption: 'Group Profile Picture' });
+        } catch {
+            return ctx.reply('❌ Group profile picture not available.');
+        }
+    }
+});
+
+// DISAPPEARING MESSAGES
+addCmd({
+    name: 'disapp',
+    aliases: [],
+    desc: 'Set disappearing messages',
+    category: 'owner',
+    ownerOnly: true,
+    async handler(ctx) {
+        const value = (ctx.args?.[0] || '').toLowerCase();
+        const times = { off: 0, '24h': 86400, '7d': 604800, '90d': 7776000 };
+        if (!(value in times)) return ctx.reply('Usage: .disapp off/24h/7d/90d');
+        try {
+            await ctx.sock.sendMessage(ctx.from, { disappearingMessagesInChat: times[value] });
+            return ctx.reply(`✅ Disappearing messages setting requested: ${value}`);
+        } catch {
+            return ctx.reply('❌ Failed to update disappearing messages.');
+        }
+    }
+});
+
+// DELETE REPLIED MESSAGE
+addCmd({
+    name: 'del',
+    aliases: ['delete'],
+    desc: 'Delete a replied message',
+    category: 'owner',
+    ownerOnly: true,
+    async handler(ctx) {
+        try {
+            const q = ctx.quoted;
+            if (!q) return ctx.reply('Reply to a message to delete it.');
+            const key = q.key || q;
+            const remoteJid = key.remoteJid || ctx.from;
+            if (!key.id) return ctx.reply('❌ Could not identify the replied message.');
+            await ctx.sock.sendMessage(remoteJid, {
+                delete: {
+                    remoteJid,
+                    fromMe: Boolean(key.fromMe),
+                    id: key.id,
+                    participant: key.participant
+                }
+            });
+        } catch {
+            return ctx.reply('❌ Could not delete that message.');
+        }
+    }
+});
+
+// LIST MY GROUPS
+addCmd({
+    name: 'mygroups',
+    aliases: [],
+    desc: 'List groups the bot belongs to',
+    category: 'owner',
+    ownerOnly: true,
+    async handler(ctx) {
+        try {
+            const groups = await ctx.sock.groupFetchAllParticipating();
+            const list = Object.entries(groups).map(([jid, g], i) =>
+                `${i + 1}. ${g.subject || 'Unnamed Group'}\n${jid}`
+            );
+            return ctx.reply(list.length ? list.join('\n\n') : 'No groups found.');
+        } catch {
+            return ctx.reply('❌ Failed to fetch groups.');
+        }
+    }
+});
+
+// BLOCK LIST
+addCmd({
+    name: 'blocklist',
+    aliases: [],
+    desc: 'Show blocked contacts',
+    category: 'owner',
+    ownerOnly: true,
+    async handler(ctx) {
+        try {
+            const list = await ctx.sock.fetchBlocklist();
+            return ctx.reply(list?.length ? list.join('\n') : 'Block list is empty.');
+        } catch {
+            return ctx.reply('❌ Failed to fetch block list.');
+        }
+    }
+});
+
+// FORWARD REPLIED MESSAGE
+addCmd({
+    name: 'forward',
+    aliases: [],
+    desc: 'Forward a replied message',
+    category: 'owner',
+    ownerOnly: true,
+    async handler(ctx) {
+        const target = ctx.args?.[0];
+        const q = ctx.quoted;
+        if (!target || !q) return ctx.reply('Reply to a message and use: .forward number');
+        try {
+            const jid = target.includes('@') ? target : `${target.replace(/\D/g, '')}@s.whatsapp.net`;
+            const message = q.message || q.msg;
+            if (!message) return ctx.reply('❌ Could not read the replied message.');
+            await ctx.sock.sendMessage(jid, { forward: message });
+            return ctx.reply('✅ Forward request sent.');
+        } catch {
+            return ctx.reply('❌ Failed to forward message.');
+        }
+    }
+});
+
+// SEND TEXT TO STATUS
+addCmd({
+    name: 'tostatus',
+    aliases: [],
+    desc: 'Post text to WhatsApp status',
+    category: 'owner',
+    ownerOnly: true,
+    async handler(ctx) {
+        const text = ctx.args?.join(' ');
+        if (!text) return ctx.reply('Usage: .tostatus Your status text');
+        try {
+            await ctx.sock.sendMessage('status@broadcast', { text });
+            return ctx.reply('✅ Status posted.');
+        } catch {
+            return ctx.reply('❌ Failed to post status.');
+        }
+    }
+});
+
+// JOIN GROUP USING INVITE LINK
+addCmd({
+    name: 'join',
+    aliases: [],
+    desc: 'Join a group using invite link',
+    category: 'owner',
+    ownerOnly: true,
+    async handler(ctx) {
+        const link = ctx.args?.[0];
+        const code = link?.match(/chat\.whatsapp\.com\/([0-9A-Za-z]+)/)?.[1];
+        if (!code) return ctx.reply('Usage: .join https://chat.whatsapp.com/INVITECODE');
+        try {
+            const result = await ctx.sock.groupAcceptInvite(code);
+            return ctx.reply(`✅ Joined group: ${result}`);
+        } catch {
+            return ctx.reply('❌ Could not join group. The link may be invalid or expired.');
+        }
+    }
+});
+
+// SHOW CHAT JID
+addCmd({
+    name: 'jid',
+    aliases: ['getjid'],
+    desc: 'Show current chat JID',
+    category: 'owner',
+    ownerOnly: true,
+    async handler(ctx) {
+        return ctx.reply(`📌 Chat JID: ${ctx.from || ctx.m?.key?.remoteJid || 'Unknown'}`);
+    }
+});
+
+// CACHED GROUP METADATA
+addCmd({
+    name: 'cachedmeta',
+    aliases: [],
+    desc: 'Show available group metadata',
+    category: 'owner',
+    ownerOnly: true,
+    groupOnly: true,
+    async handler(ctx) {
+        try {
+            const meta = ctx.groupMeta || await ctx.sock.groupMetadata(ctx.from);
+            return ctx.reply(
+                `Group: ${meta.subject || 'Unknown'}\nJID: ${meta.id || ctx.from}\nMembers: ${meta.participants?.length || 0}`
+            );
+        } catch {
+            return ctx.reply('❌ Group metadata is unavailable.');
+        }
+    }
+});
+
+// GET LID
+addCmd({
+    name: 'getlid',
+    aliases: [],
+    desc: 'Show sender LID if available',
+    category: 'owner',
+    ownerOnly: true,
+    async handler(ctx) {
+        const sender = ctx.sender || ctx.m?.sender || '';
+        const chat = ctx.from || '';
+        return ctx.reply(`Sender: ${sender || 'Unknown'}\nChat: ${chat || 'Unknown'}\nLID conversion depends on the Baileys version and available LID mapping.`);
+    }
+});
