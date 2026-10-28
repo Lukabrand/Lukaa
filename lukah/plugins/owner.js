@@ -832,23 +832,6 @@ addCmd({
     }
 });
 
-// BLOCK LIST
-addCmd({
-    name: 'blocklist',
-    aliases: [],
-    desc: 'Show blocked contacts',
-    category: 'owner',
-    ownerOnly: true,
-    async handler(ctx) {
-        try {
-            const list = await ctx.sock.fetchBlocklist();
-            return ctx.reply(list?.length ? list.join('\n') : 'Block list is empty.');
-        } catch {
-            return ctx.reply('❌ Failed to fetch block list.');
-        }
-    }
-});
-
 // FORWARD REPLIED MESSAGE
 addCmd({
     name: 'forward',
