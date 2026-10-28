@@ -255,13 +255,11 @@ async function sendConnectionMessage(socket) {
 
     const startText =
 `╭══〘〘 *${botName}* 〙〙═⊷
-┃
 ┃ 🟢 *Status:* ✅ ONLINE
 ┃ 👑 *Owner:* ${ownerName}
 ┃ 📊 *Plugins:* ${totalCommands}
 ┃ 📌 *Prefix:* [ ${prefix} ]
 ┃ 🌐 *Mode:* ${mode}
-┃
 ╰══✦ *ᴘᴏᴡᴇʀᴇᴅ ʙʏ ʟᴜᴋᴀʙʀᴀɴᴅ* ✦══⊷`;
 
     try {
