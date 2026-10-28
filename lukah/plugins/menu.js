@@ -201,8 +201,7 @@ addCmd({
                 {
                     image: { url: MENU_IMAGE },
                     caption: menu,
-                    mentions: [ctx.sender],
-                    contextInfo: channelCtx()
+                    mentions: [ctx.sender]      
                 },
                 { quoted: ctx.m }
             );
