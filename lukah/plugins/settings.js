@@ -356,7 +356,9 @@ addCmd({
             msg += `╰═════════════════⊷\n\n`;
             msg += `${footer}`;
 
-            await ctx.reply(msg);
+            await ctx.sock.sendMessage(ctx.from, {
+    text: msg
+}, { quoted: ctx.m });
 
         } catch (error) {
             console.error('[BOT SETTINGS ERROR]', error);
