@@ -1160,52 +1160,28 @@ addCmd({
 });
 
 // ═══════════════════════════════════════════════════════════════
-// ANTI-DELETE — OWNER DM
+// ANTI-DELETE — OWNER ONLY, GLOBAL DM REPORTS
 // ═══════════════════════════════════════════════════════════════
 
 addCmd({
     name: 'antidelete',
     aliases: ['antidel', 'adel'],
-    desc: 'Toggle deleted-message reports to owner DM',
+    desc: 'Toggle global anti-delete reports to owner inbox',
     category: 'owner',
     ownerOnly: true,
 
     handler: async (ctx) => {
-        try {
-            const current = String(
-                getSetting('ANTIDELETE') || 'false'
-            ).toLowerCase();
+        const current = String(getSetting('ANTIDELETE') || 'false').toLowerCase();
+        const enabled = ['indm', 'true', 'on'].includes(current);
+        const newVal = enabled ? 'false' : 'indm';
 
-            const enabled = ['indm', 'true', 'on'].includes(current);
+        setSetting('ANTIDELETE', newVal);
 
-            if (enabled) {
-                setSetting('ANTIDELETE', 'false');
-
-                return ctx.reply(
-                    `❌ *ANTI-DELETE DM OFF*\n\n` +
-                    `Deleted-message reports to the owner have been disabled.\n\n` +
-                    `Use .antidelete to enable again.\n\n` +
-                    `_${FOOTER}_`
-                );
-            }
-
-            setSetting('ANTIDELETE', 'indm');
-
-            return ctx.reply(
-                `✅ *ANTI-DELETE DM ON*\n\n` +
-                `📩 Destination: Owner's private WhatsApp chat\n` +
-                `🗑️ Feature: Deleted-message detection\n` +
-                `⚙️ Status: Enabled\n\n` +
-                `The bot can report deleted messages if the original message was cached and the deletion event is received.\n\n` +
-                `Use .antidelete to disable.\n\n` +
-                `_${FOOTER}_`
-            );
-        } catch (error) {
-            return ctx.reply(
-                `❌ *ANTI-DELETE ERROR*\n\n` +
-                `${String(error.message || error).slice(0, 250)}`
-            );
-        }
+        await ctx.reply(
+            `${enabled ? '❌' : '✅'} *ANTI-DELETE ${enabled ? 'OFF' : 'ON'}*\n\n` +
+            `${enabled ? 'Deleted messages will no longer be sent to your inbox.' : 'Deleted messages will be reported to your WhatsApp inbox.'}\n\n` +
+            `ᴘᴏᴡᴇʀᴇᴅ ʙʏ ʟᴜᴋᴀʙʀᴀɴᴅ`
+        );
     },
 });
 
