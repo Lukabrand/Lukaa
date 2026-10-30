@@ -196,29 +196,122 @@ function getStoredMessage(id) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  🗑️  ANTI-DELETE
+//  🗑️ ANTI-DELETE — SEND DELETED MESSAGES TO OWNER DM
 // ═══════════════════════════════════════════════════════════════
 
 async function PantherAntiDelete(sock, key) {
     try {
-        const from     = key?.remoteJid;
-        const settings = getGroupSettings(from);
-        if (!settings?.antidelete) return;
+        if (!key?.id || !key?.remoteJid) return;
 
-        const stored = msgStore.get(key?.id);
-        if (!stored?.msg?.message) return;
+        // Anti-delete is controlled by the global database setting.
+        const antiDeleteSetting = String(
+            getSetting('ANTIDELETE') || 'false'
+        ).toLowerCase();
 
-        const sender = (stored.sender || from).split('@')[0];
-        const type   = Object.keys(stored.msg.message || {})[0];
+        if (!['indm', 'true', 'on'].includes(antiDeleteSetting)) return;
 
-        const header = gmdBanner('🗑️ Deleted Message Recovered', [
-            `👤 Sender : @${sender}`,
-            `📂 Type   : ${type?.replace('Message', '') || 'text'}`,
-            `🔄 Restored by ${config.BOT_NAME}`,
-        ], config.BOT_NAME);
+        // Retrieve the original message from the message cache.
+        const stored = msgStore.get(key.id);
+        if (!stored?.msg?.message) {
+            logger.debug(
+                'ANTIDELETE',
+                `Original message not cached: ${key.id}`
+            );
+            return;
+        }
 
-        await sendWithChannel(sock, from, { text: header, mentions: [stored.sender] });
-        await sock.sendMessage(from, stored.msg.message).catch(() => {});
+        // Resolve owner WhatsApp number.
+        const ownerNumber = String(
+            config.OWNER_NUMBER || ''
+        ).replace(/\D/g, '');
+
+        if (!ownerNumber) {
+            logger.warn('ANTIDELETE', 'OWNER_NUMBER is not configured.');
+            return;
+        }
+
+        const ownerJid = `${ownerNumber}@s.whatsapp.net`;
+        const originalMessage = stored.msg;
+        const messageContent = originalMessage.message;
+
+        // Avoid reporting messages sent by the bot itself.
+        if (originalMessage.key?.fromMe) return;
+
+        const senderJid =
+            stored.sender ||
+            originalMessage.key?.participant ||
+            stored.from ||
+            key.remoteJid;
+
+        const senderNumber = String(senderJid).split('@')[0];
+        const chatJid = stored.from || key.remoteJid;
+        const isGroup = chatJid.endsWith('@g.us');
+
+        const messageType = Object.keys(messageContent)[0] || 'unknown';
+
+        const messageText =
+            messageContent.conversation ||
+            messageContent.extendedTextMessage?.text ||
+            messageContent.imageMessage?.caption ||
+            messageContent.videoMessage?.caption ||
+            messageContent.documentMessage?.caption ||
+            messageContent.documentMessage?.fileName ||
+            '';
+
+        const header = [
+            '🗑️ *DELETED MESSAGE DETECTED*',
+            '',
+            `🤖 Bot: ${config.BOT_NAME || 'LUKA-XMD'}`,
+            `👤 Sender: +${senderNumber}`,
+            `💬 Chat: ${isGroup ? 'Group' : 'Private chat'}`,
+            `📍 Chat JID: ${chatJid}`,
+            `📂 Message type: ${messageType.replace(/Message$/i, '')}`,
+            `🕒 Deleted at: ${new Date().toLocaleString('en-GB', {
+                timeZone: config.TIME_ZONE || 'Africa/Dar_es_Salaam'
+            })}`,
+            '',
+            messageText
+                ? `📝 *Message content:*\n${String(messageText).slice(0, 3000)}`
+                : '📝 Message content is attached below, if supported.',
+            '',
+            'ᴘᴏᴡᴇʀᴇᴅ ʙʏ ʟᴜᴋᴀʙʀᴀɴᴅ'
+        ].join('\n');
+
+        // Send the report to the owner's private WhatsApp chat.
+        await sock.sendMessage(ownerJid, {
+            text: header,
+            ...(senderJid.includes('@s.whatsapp.net')
+                ? { mentions: [senderJid] }
+                : {})
+        }).catch(err => {
+            logger.warn('ANTIDELETE', `Could not send owner report: ${err.message}`);
+        });
+
+        // Forward the original content when it can be re-sent directly.
+        // Some WhatsApp message types need media download/re-upload instead.
+        const supportedTypes = [
+            'conversation',
+            'extendedTextMessage',
+            'imageMessage',
+            'videoMessage',
+            'audioMessage',
+            'documentMessage',
+            'stickerMessage',
+        ];
+
+        if (supportedTypes.includes(messageType)) {
+            await sock.sendMessage(ownerJid, messageContent).catch(err => {
+                logger.warn(
+                    'ANTIDELETE',
+                    `Could not forward original content: ${err.message}`
+                );
+            });
+        }
+
+        logger.info(
+            'ANTIDELETE',
+            `Deleted message report processed for ${senderNumber}`
+        );
     } catch (err) {
         logger.error('ANTIDELETE', err.message);
     }
