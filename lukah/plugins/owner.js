@@ -1159,43 +1159,121 @@ addCmd({
     },
 });
 
-// ═══════════════════════════════════════════════════════════════
-// ANTI-DELETE — CONFIG CONNECTED
-// ═══════════════════════════════════════════════════════════════
+
+
+// ═══════════════════════════════════════════════════════════
+// ANTI-DELETE
+// ═══════════════════════════════════════════════════════════
 
 addCmd({
-    name: 'antidelete',
-    aliases: ['antidel', 'adel'],
-    desc: 'Toggle Anti-Delete in config',
+    name: 'setantidelete',
+    aliases: ['antidelete', 'antidel'],
+    desc: 'Set anti-delete mode (inchat/indm/off)',
     category: 'owner',
     ownerOnly: true,
 
     handler: async (ctx) => {
+        const q = String(ctx.args?.join(' ') || '').trim().toLowerCase();
+
+        const valid = ['inchat', 'indm', 'false'];
+        const value = q === 'off' ? 'false' : q;
+
+        if (!valid.includes(value)) {
+            return ctx.reply(
+                '❌ *Please specify:*\n\n' +
+                '• `.setantidelete inchat` — Report in the same chat\n' +
+                '• `.setantidelete indm` — Send reports to owner inbox\n' +
+                '• `.setantidelete off` — Disable anti-delete\n\n' +
+                'ᴘᴏᴡᴇʀᴇᴅ ʙʏ ʟᴜᴋᴀʙʀᴀɴᴅ'
+            );
+        }
+
         try {
-            // Read the current config value directly.
-            const current = config.ANTIDELETE === true;
-            const newValue = !current;
+            const current = String(
+                await getSetting('ANTIDELETE') || 'false'
+            ).toLowerCase();
 
-            // Update the running config immediately.
-            config.ANTIDELETE = newValue;
+            if (current === value) {
+                const display = value === 'false' ? 'OFF' : value.toUpperCase();
 
-            // Persist the value in the database too.
-            setSetting('ANTIDELETE', String(newValue));
+                return ctx.reply(
+                    `⚠️ Anti-delete is already set to: *${display}*`
+                );
+            }
 
-            await ctx.reply(
-                `${newValue ? '✅' : '❌'} *ANTI-DELETE ${newValue ? 'ON' : 'OFF'}*\n\n` +
-                `Config: \`ANTIDELETE = ${newValue}\`\n` +
-                `Reports: ${newValue ? 'Enabled' : 'Disabled'}\n\n` +
-                `${FOOTER}`
+            await setSetting('ANTIDELETE', value);
+
+            const display = value === 'false' ? 'OFF' : value.toUpperCase();
+
+            return ctx.reply(
+                `✅ *ANTI-DELETE UPDATED*\n\n` +
+                `Mode: *${display}*\n\n` +
+                `ᴘᴏᴡᴇʀᴇᴅ ʙʏ ʟᴜᴋᴀʙʀᴀɴᴅ`
             );
         } catch (error) {
             console.error('[ANTIDELETE]', error);
 
-            await ctx.reply(
-                `❌ Failed to update Anti-Delete.\n\n${FOOTER}`
+            return ctx.reply(
+                `❌ Failed to update anti-delete: ${error.message}`
             );
         }
-    },
+    }
+});
+
+
+// ═══════════════════════════════════════════════════════════
+// ANTI-EDIT
+// ═══════════════════════════════════════════════════════════
+
+addCmd({
+    name: 'setantiedit',
+    aliases: ['antiedit'],
+    desc: 'Set anti-edit mode (on/off/indm/inchat)',
+    category: 'owner',
+    ownerOnly: true,
+
+    handler: async (ctx) => {
+        const q = String(ctx.args?.join(' ') || '').trim().toLowerCase();
+
+        const valid = ['on', 'off', 'indm', 'inchat'];
+
+        if (!valid.includes(q)) {
+            return ctx.reply(
+                '❌ *Please specify:*\n\n' +
+                '• `.setantiedit indm` — Alert owner inbox\n' +
+                '• `.setantiedit inchat` — Alert in the same chat\n' +
+                '• `.setantiedit on` — Enable anti-edit\n' +
+                '• `.setantiedit off` — Disable anti-edit\n\n' +
+                'ᴘᴏᴡᴇʀᴇᴅ ʙʏ ʟᴜᴋᴀʙʀᴀɴᴅ'
+            );
+        }
+
+        try {
+            const current = String(
+                await getSetting('ANTI_EDIT') || 'off'
+            ).toLowerCase();
+
+            if (current === q) {
+                return ctx.reply(
+                    `⚠️ Anti-edit is already set to: *${q.toUpperCase()}*`
+                );
+            }
+
+            await setSetting('ANTI_EDIT', q);
+
+            return ctx.reply(
+                `✅ *ANTI-EDIT UPDATED*\n\n` +
+                `Mode: *${q.toUpperCase()}*\n\n` +
+                `ᴘᴏᴡᴇʀᴇᴅ ʙʏ ʟᴜᴋᴀʙʀᴀɴᴅ`
+            );
+        } catch (error) {
+            console.error('[ANTIEDIT]', error);
+
+            return ctx.reply(
+                `❌ Failed to update anti-edit: ${error.message}`
+            );
+        }
+    }
 });
 
 // ═══════════════════════════════════════════════════════════════
