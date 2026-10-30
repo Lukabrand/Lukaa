@@ -583,149 +583,316 @@ addCmd({
 });
 
 // ═══════════════════════════════════════════════════════════════
-//  ANTI-DELETE — FIVE COMMANDS
-//  Modes: INCHAT / INDM / OFF
+//  ANTI-MENTION
+//  Deletes messages that mass-mention 5+ members (non-admins)
 // ═══════════════════════════════════════════════════════════════
 
-const ANTIDELETE_KEY = 'ANTIDELETE';
+addCmd({
+    name: 'antimention',
+    aliases: ['antitag'],
+    desc: 'Block mass-mentions by non-admins (5+ tags = delete)',
+    category: 'group',
+    groupOnly: true,
+    adminOnly: true,
+    handler: async (ctx) => {
+        const current = getGroupSettings(ctx.from).antimention;
+        const newVal  = !current;
+        setGroupSetting(ctx.from, 'antimention', newVal);
+        await ctx.reply(
+            newVal
+                ? '🔕 *Anti-Mention ON*\n\nMass-mentions (5+ tags) by non-admins will be deleted automatically.'
+                : '🔔 *Anti-Mention OFF*\n\nMass-mention protection has been disabled.'
+        );
+    },
+});
 
-function getAntiDeleteMode() {
-    const value = getSetting(ANTIDELETE_KEY, 'false');
-    return String(value).toLowerCase();
-}
+addTrigger({
+    pattern: /.*/,
+    handler: async (ctx) => {
+        if (!ctx.isGroup) return;
+        const settings = getGroupSettings(ctx.from);
+        if (!settings.antimention) return;
+        if (ctx.isAdmin || ctx.isOwner || ctx.m.fromMe) return;
 
-function setAntiDeleteMode(mode) {
-    setSetting(ANTIDELETE_KEY, mode);
-    config.ANTIDELETE = mode;
-}
+        const mentionedJids =
+            ctx.m.message?.extendedTextMessage?.contextInfo?.mentionedJid ||
+            ctx.m.message?.contextInfo?.mentionedJid || [];
 
-// ── 1. ANTIDELETE ON ───────────────────────────────────────────
+        if (mentionedJids.length < 5) return;
+
+        await ctx.deleteMsg().catch(() => {});
+        await ctx.send({
+            text:
+                `🔕 *Anti-Mention*\n\n` +
+                `@${ctx.sender.split('@')[0]} you cannot mass-tag members!\n\n` +
+                `_${config.BOT_NAME}_`,
+            mentions: [ctx.sender],
+        }).catch(() => {});
+    },
+});
+
+// ═══════════════════════════════════════════════════════════════
+//  ANTI-VIEWONCE
+//  Re-sends view-once photos/videos so everyone in the group sees them
+// ═══════════════════════════════════════════════════════════════
 
 addCmd({
-    name: 'antideleteon',
-    aliases: ['adon'],
-    desc: 'Enable Anti-Delete in DM mode',
+    name: 'antiviewonce',
+    aliases: ['antiview', 'avo'],
+    desc: 'Re-send view-once media so all members can see it',
+    category: 'group',
+    groupOnly: true,
+    adminOnly: true,
+    handler: async (ctx) => {
+        const current = getGroupSettings(ctx.from).antiviewonce;
+        const newVal  = !current;
+        setGroupSetting(ctx.from, 'antiviewonce', newVal);
+        await ctx.reply(
+            newVal
+                ? '👁️ *Anti-ViewOnce ON*\n\nView-once media will be re-sent for everyone to see.'
+                : '👁️ *Anti-ViewOnce OFF*\n\nView-once media will stay private.'
+        );
+    },
+});
+
+addTrigger({
+    pattern: /.*/,
+    handler: async (ctx) => {
+        if (!ctx.isGroup) return;
+        const settings = getGroupSettings(ctx.from);
+        if (!settings.antiviewonce) return;
+        if (ctx.m.fromMe) return;
+
+        const raw = ctx.m.message;
+        const inner =
+            raw?.viewOnceMessage?.message ||
+            raw?.viewOnceMessageV2?.message ||
+            raw?.viewOnceMessageV2Extension?.message;
+        if (!inner) return;
+
+        const caption =
+            inner.imageMessage?.caption ||
+            inner.videoMessage?.caption || '';
+
+        await ctx.sock.sendMessage(ctx.from, {
+            forward: { ...ctx.m, message: inner },
+        }, { quoted: ctx.m }).catch(async () => {
+            await ctx.reply(
+                `👁️ *Anti-ViewOnce*\n\n` +
+                `@${ctx.sender.split('@')[0]} sent a view-once media.\n` +
+                (caption ? `_Caption: ${caption}_` : '') +
+                `\n\n_${config.BOT_NAME}_`
+            ).catch(() => {});
+        });
+    },
+});
+
+// ═══════════════════════════════════════════════════════════════
+//  ANTI-STICKER
+//  Deletes sticker messages sent by non-admins
+// ═══════════════════════════════════════════════════════════════
+
+addCmd({
+    name: 'antisticker',
+    aliases: ['nosticker'],
+    desc: 'Delete stickers sent by non-admins in the group',
+    category: 'group',
+    groupOnly: true,
+    adminOnly: true,
+    handler: async (ctx) => {
+        const current = getGroupSettings(ctx.from).antisticker;
+        const newVal  = !current;
+        setGroupSetting(ctx.from, 'antisticker', newVal);
+        await ctx.reply(
+            newVal
+                ? '🚫 *Anti-Sticker ON*\n\nStickers from non-admins will be deleted.'
+                : '✅ *Anti-Sticker OFF*\n\nSticker restriction has been disabled.'
+        );
+    },
+});
+
+addTrigger({
+    pattern: /.*/,
+    handler: async (ctx) => {
+        if (!ctx.isGroup) return;
+        const settings = getGroupSettings(ctx.from);
+        if (!settings.antisticker) return;
+        if (ctx.isAdmin || ctx.isOwner || ctx.m.fromMe) return;
+        if (!ctx.m.message?.stickerMessage) return;
+
+        await ctx.deleteMsg().catch(() => {});
+        await ctx.send({
+            text:
+                `🚫 *Anti-Sticker*\n\n` +
+                `@${ctx.sender.split('@')[0]} stickers are not allowed in this group!\n\n` +
+                `_${config.BOT_NAME}_`,
+            mentions: [ctx.sender],
+        }).catch(() => {});
+    },
+});
+
+// ═══════════════════════════════════════════════════════════════
+//  ANTI-FOREIGN
+//  Toggle command — enforcement happens in lib/handlers/group.js
+// ═══════════════════════════════════════════════════════════════
+
+addCmd({
+    name: 'antiforeign',
+    aliases: ['noforeign'],
+    desc: 'Auto-remove members with foreign phone numbers when they join',
+    category: 'group',
+    groupOnly: true,
+    adminOnly: true,
+    handler: async (ctx) => {
+        if (!ctx.isBotAdmin) return ctx.reply('❌ I need to be an *admin* to remove members.');
+        const current = getGroupSettings(ctx.from).antiforeign;
+        const newVal  = !current;
+        setGroupSetting(ctx.from, 'antiforeign', newVal);
+        await ctx.reply(
+            newVal
+                ? '🌍 *Anti-Foreign ON*\n\nForeign numbers will be removed automatically when they join.'
+                : '🌍 *Anti-Foreign OFF*\n\nForeign number restriction has been disabled.'
+        );
+    },
+});
+
+// ═══════════════════════════════════════════════════════════════
+//  FREEZE LAST SEEN
+//  Hides the bot's last seen from everyone
+// ═══════════════════════════════════════════════════════════════
+
+addCmd({
+    name: 'freezelastseen',
+    aliases: ['freezels', 'fls'],
+    desc: "Freeze / unfreeze the bot's last seen",
     category: 'owner',
     ownerOnly: true,
-
     handler: async (ctx) => {
-        try {
-            setAntiDeleteMode('indm');
+        const current = getSetting('FREEZE_LAST_SEEN', 'false') === 'true';
+        const newVal  = !current;
+        setSetting('FREEZE_LAST_SEEN', String(newVal));
 
+        if (newVal) {
+            await ctx.sock.updateLastSeenPrivacy('none').catch(() => {});
+            await ctx.sock.updateOnlinePrivacy('match_last_seen').catch(() => {});
             await ctx.reply(
-                `✅ *ANTI-DELETE ENABLED*\n\n` +
-                `📥 Mode: *INDM*\n` +
-                `Deleted messages will be sent to the owner's inbox ` +
-                `when the deletion listener is connected.\n\n` +
-                `ᴘᴏᴡᴇʀᴇᴅ ʙʏ ʟᴜᴋᴀʙʀᴀɴᴅ`
+                `❄️ *Last Seen Frozen!*\n\n` +
+                `The bot's last seen is now hidden from everyone.\n\n` +
+                `_Use .freezelastseen again to unfreeze._`
             );
-        } catch (error) {
-            await ctx.reply(`❌ Error: ${error.message}`);
+        } else {
+            await ctx.sock.updateLastSeenPrivacy('contacts').catch(() => {});
+            await ctx.reply(
+                `✅ *Last Seen Unfrozen!*\n\n` +
+                `The bot's last seen is now visible to contacts.`
+            );
         }
     },
 });
 
-// ── 2. ANTIDELETE OFF ──────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
+//  GHOST MODE
+//  Full privacy lock: last seen + profile photo + status all hidden
+// ═══════════════════════════════════════════════════════════════
 
 addCmd({
-    name: 'antideleteoff',
-    aliases: ['adoff'],
-    desc: 'Disable Anti-Delete',
+    name: 'ghostmode',
+    aliases: ['ghost'],
+    desc: 'Toggle full ghost mode (hide last seen, photo & status)',
     category: 'owner',
     ownerOnly: true,
-
     handler: async (ctx) => {
-        try {
-            setAntiDeleteMode('false');
+        const current = getSetting('GHOST_MODE', 'false') === 'true';
+        const newVal  = !current;
+        setSetting('GHOST_MODE', String(newVal));
 
+        if (newVal) {
+            await Promise.all([
+                ctx.sock.updateLastSeenPrivacy('none'),
+                ctx.sock.updateOnlinePrivacy('match_last_seen'),
+                ctx.sock.updateProfilePicturePrivacy('none'),
+                ctx.sock.updateStatusPrivacy('none'),
+            ]).catch(() => {});
             await ctx.reply(
-                `🔕 *ANTI-DELETE DISABLED*\n\n` +
-                `Anti-Delete has been turned off.\n\n` +
-                `ᴘᴏᴡᴇʀᴇᴅ ʙʏ ʟᴜᴋᴀʙʀᴀɴᴅ`
+                `👻 *Ghost Mode ON!*\n\n` +
+                `• Last Seen  » Hidden\n` +
+                `• Profile Photo » Hidden\n` +
+                `• Status  » Hidden\n\n` +
+                `_Use .ghostmode again to turn off._`
             );
-        } catch (error) {
-            await ctx.reply(`❌ Error: ${error.message}`);
+        } else {
+            await Promise.all([
+                ctx.sock.updateLastSeenPrivacy('contacts'),
+                ctx.sock.updateProfilePicturePrivacy('contacts'),
+                ctx.sock.updateStatusPrivacy('contacts'),
+            ]).catch(() => {});
+            await ctx.reply(
+                `✅ *Ghost Mode OFF!*\n\n` +
+                `Privacy settings restored to contacts-only.`
+            );
         }
     },
 });
 
-// ── 3. ANTIDELETE INCHAT ───────────────────────────────────────
 
+// ═══════════════════════════════════════════════════════════════
+//  ANTI-DELETE  —  command to toggle anti-delete on/off
+// ═══════════════════════════════════════════════════════════════
 addCmd({
-    name: 'antideletechat',
-    aliases: ['adchat'],
-    desc: 'Send deleted-message alerts to the original chat',
-    category: 'owner',
-    ownerOnly: true,
-
+    name: 'antidelete',
+    aliases: ['antidel', 'adel'],
+    desc: 'Toggle anti-delete — recover deleted messages',
+    category: 'group',
+    groupOnly: true,
+    adminOnly: true,
     handler: async (ctx) => {
-        try {
-            setAntiDeleteMode('inchat');
+        const { getGroupSettings, setGroupSetting } = require('../../luka/db/database');
+        const { channelCtx } = require('../../luka/utils/gmdFunctions2');
+        const current = getGroupSettings(ctx.from).antidelete;
+        const newVal  = !current;
+        setGroupSetting(ctx.from, 'antidelete', newVal);
 
-            await ctx.reply(
-                `✅ *ANTI-DELETE INCHAT ENABLED*\n\n` +
-                `Deleted-message alerts will go to the original chat ` +
-                `when the deletion listener is connected.\n\n` +
-                `ᴘᴏᴡᴇʀᴇᴅ ʙʏ ʟᴜᴋᴀʙʀᴀɴᴅ`
-            );
-        } catch (error) {
-            await ctx.reply(`❌ Error: ${error.message}`);
-        }
+        await ctx.sock.sendMessage(
+            ctx.from,
+            {
+                text: newVal
+                    ? `*ANTI-DELETE ON*\n${ctx.config.BOT_NAME}\n\nDeleted messages will be recovered and shown to everyone.\n\n◈ ${ctx.config.CHANNEL_NAME}`
+                    : `*ANTI-DELETE OFF*\n${ctx.config.BOT_NAME}\n\nMessage recovery has been disabled.\n\n◈ ${ctx.config.CHANNEL_NAME}`,
+                contextInfo: channelCtx(),
+            },
+            { quoted: ctx.m }
+        );
     },
 });
 
-// ── 4. ANTIDELETE INDM ─────────────────────────────────────────
-
+// ═══════════════════════════════════════════════════════════════
+//  ANTI-EDIT  —  command to toggle anti-edit detection
+// ═══════════════════════════════════════════════════════════════
 addCmd({
-    name: 'antideletedm',
-    aliases: ['addm', 'antideleteinbox'],
-    desc: 'Send deleted-message alerts to the owner inbox',
-    category: 'owner',
-    ownerOnly: true,
-
+    name: 'antiedit',
+    aliases: ['antied'],
+    desc: 'Toggle anti-edit — log original message before edits',
+    category: 'group',
+    groupOnly: true,
+    adminOnly: true,
     handler: async (ctx) => {
-        try {
-            setAntiDeleteMode('indm');
+        const { getGroupSettings, setGroupSetting } = require('../../luka/db/database');
+        const { channelCtx } = require('../../luka/utils/gmdFunctions2');
+        const current = getGroupSettings(ctx.from).antidelete; // shared flag
+        const newVal  = !current;
+        setGroupSetting(ctx.from, 'antidelete', newVal);
 
-            await ctx.reply(
-                `📥 *ANTI-DELETE INDM ENABLED*\n\n` +
-                `Deleted-message alerts are configured to go to the ` +
-                `owner's WhatsApp inbox.\n\n` +
-                `ᴘᴏᴡᴇʀᴇᴅ ʙʏ ʟᴜᴋᴀʙʀᴀɴᴅ`
-            );
-        } catch (error) {
-            await ctx.reply(`❌ Error: ${error.message}`);
-        }
+        await ctx.sock.sendMessage(
+            ctx.from,
+            {
+                text: newVal
+                    ? `*ANTI-EDIT ON*\n${ctx.config.BOT_NAME}\n\nOriginal messages will be shown when someone edits.\n\n◈ ${ctx.config.CHANNEL_NAME}`
+                    : `*ANTI-EDIT OFF*\n${ctx.config.BOT_NAME}\n\nEdit detection has been disabled.\n\n◈ ${ctx.config.CHANNEL_NAME}`,
+                contextInfo: channelCtx(),
+            },
+            { quoted: ctx.m }
+        );
     },
-});
-
-// ── 5. ANTIDELETE STATUS ───────────────────────────────────────
-
-addCmd({
-    name: 'antideletestatus',
-    aliases: ['adstatus'],
-    desc: 'Check Anti-Delete mode',
-    category: 'owner',
-    ownerOnly: true,
-
-    handler: async (ctx) => {
-        try {
-            const mode = getAntiDeleteMode();
-            const enabled = !['false', 'off', '0'].includes(mode);
-
-            await ctx.reply(
-                `╭══〘〘 🛡️ *ANTI-DELETE STATUS* 〙〙═⊷\n` +
-                `┃\n` +
-                `┃ Status: *${enabled ? 'ON ✅' : 'OFF ❌'}*\n` +
-                `┃ Mode: *${mode.toUpperCase()}*\n` +
-                `┃\n` +
-                `╰══⊷ ᴘᴏᴡᴇʀᴇᴅ ʙʏ ʟᴜᴋᴀʙʀᴀɴᴅ`
-            );
-        } catch (error) {
-            await ctx.reply(`❌ Error: ${error.message}`);
-        }
-    },
-});
 
 // GET PROFILE PICTURE
 addCmd({
