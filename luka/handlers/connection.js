@@ -14,15 +14,25 @@ const NodeCache = require('node-cache');
 const config = require('../config/settings');
 const logger = require('../utils/logger');
 const { resolveSession, SESSION_DIR } = require('../utils/session');
-const { seedDefaults } = require('../db/database');
+
+// Database
+const {
+    seedDefaults,
+    getSetting,
+} = require('../db/database');
+
+// Handlers
 const { loadPlugins } = require('./loader');
 const { handleMessage } = require('./message');
+
 const {
     handleGroupUpdate,
     handleGroupSettingsUpdate,
 } = require('./group');
+
 const { autoUpdate } = require('../utils/autoUpdate');
 
+// Existing Panther features
 const {
     PantherAntiCall,
     PantherAutoBio,
@@ -33,16 +43,24 @@ const {
     channelCtx,
 } = require('../utils/gmdFunctions2');
 
+// New Anti-Delete DM
+const {
+    attachAntiDelete,
+} = require('../utils/antiDelete');
+
+// Status engine
 const {
     initStatusEngine,
     enqueueAll,
 } = require('../utils/statusEngine');
 
+// Group cache
 const {
     getCached,
     invalidate: invalidateGroupCache,
 } = require('../utils/groupCache');
 
+// Status manager
 const {
     handleStatusBroadcast,
 } = require('./statusManager');
@@ -68,6 +86,9 @@ const MAX_RECONNECT_DELAY = 30_000;
 const CONNECTION_MESSAGE_EXPIRATION = 180;
 
 let connectionMessageSent = false;
+
+// Prevent duplicate Anti-Delete initialization
+let antiDeleteAttached = false;
 
 // Track followed newsletters
 if (!global._followedNewsletters) {
@@ -111,7 +132,9 @@ function ensureDir(dir) {
 
 // Automatically follow the configured newsletter
 async function autoFollowChannel(socket) {
-    if (!config.AUTO_FOLLOW_CHANNEL) return;
+    if (!config.AUTO_FOLLOW_CHANNEL) {
+        return;
+    }
 
     const jid = config.CHANNEL_JID;
 
@@ -415,6 +438,25 @@ async function startBot() {
     // Save authentication credentials
     sock.ev.on('creds.update', saveCreds);
 
+    // Initialize Anti-Delete DM
+    // This uses the ANTIDELETE setting controlled by .antideletedm.
+    if (!antiDeleteAttached) {
+        try {
+            attachAntiDelete(sock, config, getSetting);
+            antiDeleteAttached = true;
+
+            logger.success(
+                'ANTIDELETE',
+                'Anti-Delete DM listener initialized.'
+            );
+        } catch (error) {
+            logger.warn(
+                'ANTIDELETE',
+                `Could not initialize Anti-Delete DM: ${error.message}`
+            );
+        }
+    }
+
     // Handle connection updates
     sock.ev.on(
         'connection.update',
@@ -664,7 +706,7 @@ async function startBot() {
         handleMessage(upsert, sock);
     });
 
-    // Handle deleted messages
+    // Handle deleted messages (existing Panther system)
     sock.ev.on('messages.delete', item => {
         if (!item?.keys) {
             return;
