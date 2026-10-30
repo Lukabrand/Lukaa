@@ -15,7 +15,7 @@ const DEFAULT_REACT_CONFIG = {
     fixedEmoji: '💚',
 
     reactions: [
-        '💚', '💜', '❤️', '💙', '🩵'
+        '💚', '💜', '❤️', '💙', '🩵', '🩷'
     ],
 
     cycleIndex: 0,
