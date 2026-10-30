@@ -1160,34 +1160,52 @@ addCmd({
 });
 
 // ═══════════════════════════════════════════════════════════════
-// ANTI-DELETE
+// ANTI-DELETE — OWNER DM
 // ═══════════════════════════════════════════════════════════════
 
 addCmd({
     name: 'antidelete',
     aliases: ['antidel', 'adel'],
-    desc: 'Toggle anti-delete message detection',
-    category: 'group',
-    groupOnly: true,
-    adminOnly: true,
+    desc: 'Toggle deleted-message reports to owner DM',
+    category: 'owner',
+    ownerOnly: true,
 
     handler: async (ctx) => {
-        const newVal = !groupSetting(ctx, 'antidelete');
+        try {
+            const current = String(
+                getSetting('ANTIDELETE') || 'false'
+            ).toLowerCase();
 
-        setGroupSetting(ctx.from, 'antidelete', newVal);
+            const enabled = ['indm', 'true', 'on'].includes(current);
 
-        await ctx.sock.sendMessage(ctx.from, {
-            text:
-                `*ANTI-DELETE ${newVal ? 'ON' : 'OFF'}*\n` +
-                `${safeConfig('BOT_NAME', 'LUKA-XMD')}\n\n` +
-                (
-                    newVal
-                        ? 'Anti-delete setting enabled. Deleted-message recovery also requires a working message-deletion handler.'
-                        : 'Anti-delete setting disabled.'
-                ) +
-                `\n\n◈ ${safeConfig('CHANNEL_NAME', safeConfig('CHANNEL_URL'))}`,
-            contextInfo: channelCtx(),
-        }, { quoted: ctx.m });
+            if (enabled) {
+                setSetting('ANTIDELETE', 'false');
+
+                return ctx.reply(
+                    `❌ *ANTI-DELETE DM OFF*\n\n` +
+                    `Deleted-message reports to the owner have been disabled.\n\n` +
+                    `Use .antidelete to enable again.\n\n` +
+                    `_${FOOTER}_`
+                );
+            }
+
+            setSetting('ANTIDELETE', 'indm');
+
+            return ctx.reply(
+                `✅ *ANTI-DELETE DM ON*\n\n` +
+                `📩 Destination: Owner's private WhatsApp chat\n` +
+                `🗑️ Feature: Deleted-message detection\n` +
+                `⚙️ Status: Enabled\n\n` +
+                `The bot can report deleted messages if the original message was cached and the deletion event is received.\n\n` +
+                `Use .antidelete to disable.\n\n` +
+                `_${FOOTER}_`
+            );
+        } catch (error) {
+            return ctx.reply(
+                `❌ *ANTI-DELETE ERROR*\n\n` +
+                `${String(error.message || error).slice(0, 250)}`
+            );
+        }
     },
 });
 
