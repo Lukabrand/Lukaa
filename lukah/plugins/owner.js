@@ -1160,60 +1160,39 @@ addCmd({
 });
 
 // ═══════════════════════════════════════════════════════════════
-// ANTI-DELETE — OWNER ONLY, GLOBAL DM REPORTS
+// ANTI-DELETE — CONFIG CONNECTED
 // ═══════════════════════════════════════════════════════════════
-
-function isAntiDeleteEnabled(value) {
-    if (typeof value === 'boolean') return value;
-
-    return ['true', 'on', 'indm', '1', 'yes'].includes(
-        String(value ?? '').toLowerCase()
-    );
-}
-
-function getAntiDeleteStatus() {
-    const dbValue = getSetting('ANTIDELETE');
-
-    // Database setting takes priority over config.
-    // This allows the owner to switch Anti-Delete OFF
-    // even if config.ANTIDELETE is true.
-    const value = dbValue !== undefined && dbValue !== null
-        ? dbValue
-        : config.ANTIDELETE;
-
-    return isAntiDeleteEnabled(value);
-}
 
 addCmd({
     name: 'antidelete',
     aliases: ['antidel', 'adel'],
-    desc: 'Toggle global anti-delete reports to owner inbox',
+    desc: 'Toggle Anti-Delete in config',
     category: 'owner',
     ownerOnly: true,
 
     handler: async (ctx) => {
         try {
-            const enabled = getAntiDeleteStatus();
-            const newValue = !enabled;
+            // Read the current config value directly.
+            const current = config.ANTIDELETE === true;
+            const newValue = !current;
 
+            // Update the running config immediately.
+            config.ANTIDELETE = newValue;
+
+            // Persist the value in the database too.
             setSetting('ANTIDELETE', String(newValue));
 
             await ctx.reply(
                 `${newValue ? '✅' : '❌'} *ANTI-DELETE ${newValue ? 'ON' : 'OFF'}*\n\n` +
-                (
-                    newValue
-                        ? 'Deleted-message reports are enabled.\n\n' +
-                          '📥 Reports destination: Owner inbox\n' +
-                          '💬 Chats: Groups and private chats'
-                        : 'Deleted-message reports have been disabled.'
-                ) +
-                `\n\n${FOOTER}`
+                `Config: \`ANTIDELETE = ${newValue}\`\n` +
+                `Reports: ${newValue ? 'Enabled' : 'Disabled'}\n\n` +
+                `${FOOTER}`
             );
         } catch (error) {
             console.error('[ANTIDELETE]', error);
 
             await ctx.reply(
-                `❌ Failed to change Anti-Delete settings.\n\n${FOOTER}`
+                `❌ Failed to update Anti-Delete.\n\n${FOOTER}`
             );
         }
     },
