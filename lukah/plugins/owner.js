@@ -1163,6 +1163,27 @@ addCmd({
 // ANTI-DELETE — OWNER ONLY, GLOBAL DM REPORTS
 // ═══════════════════════════════════════════════════════════════
 
+function isAntiDeleteEnabled(value) {
+    if (typeof value === 'boolean') return value;
+
+    return ['true', 'on', 'indm', '1', 'yes'].includes(
+        String(value ?? '').toLowerCase()
+    );
+}
+
+function getAntiDeleteStatus() {
+    const dbValue = getSetting('ANTIDELETE');
+
+    // Database setting takes priority over config.
+    // This allows the owner to switch Anti-Delete OFF
+    // even if config.ANTIDELETE is true.
+    const value = dbValue !== undefined && dbValue !== null
+        ? dbValue
+        : config.ANTIDELETE;
+
+    return isAntiDeleteEnabled(value);
+}
+
 addCmd({
     name: 'antidelete',
     aliases: ['antidel', 'adel'],
@@ -1171,17 +1192,62 @@ addCmd({
     ownerOnly: true,
 
     handler: async (ctx) => {
-        const current = String(getSetting('ANTIDELETE') || 'false').toLowerCase();
-        const enabled = ['indm', 'true', 'on'].includes(current);
-        const newVal = enabled ? 'false' : 'indm';
+        try {
+            const enabled = getAntiDeleteStatus();
+            const newValue = !enabled;
 
-        setSetting('ANTIDELETE', newVal);
+            setSetting('ANTIDELETE', String(newValue));
 
-        await ctx.reply(
-            `${enabled ? '❌' : '✅'} *ANTI-DELETE ${enabled ? 'OFF' : 'ON'}*\n\n` +
-            `${enabled ? 'Deleted messages will no longer be sent to your inbox.' : 'Deleted messages will be reported to your WhatsApp inbox.'}\n\n` +
-            `ᴘᴏᴡᴇʀᴇᴅ ʙʏ ʟᴜᴋᴀʙʀᴀɴᴅ`
-        );
+            await ctx.reply(
+                `${newValue ? '✅' : '❌'} *ANTI-DELETE ${newValue ? 'ON' : 'OFF'}*\n\n` +
+                (
+                    newValue
+                        ? 'Deleted-message reports are enabled.\n\n' +
+                          '📥 Reports destination: Owner inbox\n' +
+                          '💬 Chats: Groups and private chats'
+                        : 'Deleted-message reports have been disabled.'
+                ) +
+                `\n\n${FOOTER}`
+            );
+        } catch (error) {
+            console.error('[ANTIDELETE]', error);
+
+            await ctx.reply(
+                `❌ Failed to change Anti-Delete settings.\n\n${FOOTER}`
+            );
+        }
+    },
+});
+
+// ═══════════════════════════════════════════════════════════════
+// ANTI-DELETE STATUS
+// ═══════════════════════════════════════════════════════════════
+
+addCmd({
+    name: 'antideletestatus',
+    aliases: ['adelstatus', 'adstatus'],
+    desc: 'Check global anti-delete status',
+    category: 'owner',
+    ownerOnly: true,
+
+    handler: async (ctx) => {
+        try {
+            const enabled = getAntiDeleteStatus();
+
+            await ctx.reply(
+                `🛡️ *ANTI-DELETE STATUS*\n\n` +
+                `Status: ${enabled ? '✅ ON' : '❌ OFF'}\n` +
+                `Destination: Owner WhatsApp inbox\n` +
+                `Coverage: Groups and private chats\n\n` +
+                `${FOOTER}`
+            );
+        } catch (error) {
+            console.error('[ANTIDELETE STATUS]', error);
+
+            await ctx.reply(
+                `❌ Could not read Anti-Delete status.\n\n${FOOTER}`
+            );
+        }
     },
 });
 
